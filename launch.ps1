@@ -1,3 +1,3 @@
 se_env\Scripts\Activate
-python main.py
+python main.pyw
 se_env\Scripts\deactivate
