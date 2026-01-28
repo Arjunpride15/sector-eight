@@ -1,7 +1,7 @@
 import pyglet
 
 
-window = pyglet.window.Window(width=1200,height=800,caption="Sector 8")
+window = pyglet.window.Window(width=1600,height=800,caption="Sector 8")
 image = pyglet.resource.image('images/eater.gif')
 eater = pyglet.sprite.Sprite(img=image, x=100, y=50)
 
