@@ -16,6 +16,8 @@ def identify():
                 return 'ghost'
             elif row[i] == 'E':
                 return 'food'
+            elif row[i] ==' ':
+                return 'empty'
             else:
                 return None
         return 'newrow'
