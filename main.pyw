@@ -1,11 +1,15 @@
 import pyglet
+import tastyerrors
+import grid
 
-
+# Load stuff.
 window = pyglet.window.Window(width=1600,height=800,caption="Sector 8")
 image = pyglet.resource.image('images/eater.gif')
-eater = pyglet.sprite.Sprite(img=image, x=100, y=50)
+eater = pyglet.sprite.Sprite(img=image)
+interface = pyglet.graphics.Batch()
+LIST_INTERFACE = list()
 
-
+# The class which plays music.
 class PlayMusic:
     sound = pyglet.media.load('audio/main-music.wav', streaming=False)
 
@@ -22,8 +26,24 @@ class PlayMusic:
 def on_draw():
     # Clear the window to avoid drawing over previous frames
     window.clear()
-    eater.draw()
+    
     PlayMusic.player.play()
+    map_ = grid.identify()
+    coord_x = 0
+    coord_y = 0
+    for code in map_:
+        if code == 'wall':
+            LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/tile.gif')), x=(coord_x * 40), y=(coord_y * 40), batch=interface))
+            coord_x += 1
+        if code == 'blacktile':
+            LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/blacktile.gif')), x=(coord_x * 40), y=(coord_y * 40), batch=interface))
+            coord_x += 1
+        if code == 'newline':
+            coord_x += 1
+            coord_y += 1
+            
+    interface.draw()
+    
 
 
 

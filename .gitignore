@@ -1,2 +1,2 @@
-se_env\
-__pycache__\*.pyc
+/se_env
+/__pycache__
