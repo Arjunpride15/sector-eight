@@ -1,11 +1,10 @@
 import pyglet
 import tastyerrors
 import grid
-
+import time
 # Load stuff.
 window = pyglet.window.Window(width=1600,height=800,caption="Sector 8")
-image = pyglet.resource.image('images/eater.gif')
-eater = pyglet.sprite.Sprite(img=image)
+
 interface = pyglet.graphics.Batch()
 LIST_INTERFACE = list()
 
@@ -35,11 +34,14 @@ def on_draw():
         if code == 'wall':
             LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/tile.gif')), x=(coord_x * 40), y=(coord_y * 40), batch=interface))
             coord_x += 1
-        if code == 'blacktile':
+        elif code == 'blacktile':
             LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/blacktile.gif')), x=(coord_x * 40), y=(coord_y * 40), batch=interface))
             coord_x += 1
+        elif code == 'eater':
+            player = pyglet.sprite.Sprite(img=(pyglet.resource.image('images/eater.gif')), x=(coord_x * 40), y=(coord_y * 40), batch=interface)
+            LIST_INTERFACE.append(player)
         if code == 'newline':
-            coord_x += 1
+            coord_x = 0
             coord_y += 1
             
     interface.draw()
