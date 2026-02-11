@@ -34,12 +34,18 @@ def on_draw():
         if code == 'wall':
             LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/tile.gif')), x=(coord_x * 40), y=(coord_y * 40), batch=interface))
             coord_x += 1
-        elif code == 'blacktile':
+        if code == 'blacktile':
             LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/blacktile.gif')), x=(coord_x * 40), y=(coord_y * 40), batch=interface))
             coord_x += 1
-        elif code == 'eater':
-            player = pyglet.sprite.Sprite(img=(pyglet.resource.image('images/eater.gif')), x=(coord_x * 40), y=(coord_y * 40), batch=interface)
-            LIST_INTERFACE.append(player)
+        if code == 'food':
+            LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/pellet.gif')), x=(coord_x * 40), y=(coord_y * 40), batch=interface))
+            coord_x += 1
+        if code == 'ghost':
+            LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/ghost.gif')), x=(coord_x * 40), y=(coord_y * 40), batch=interface))
+            coord_x += 1
+        if code == 'eater':
+            LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/eater.gif')), x=(coord_x * 40), y=(coord_y * 40), batch=interface))
+            coord_x += 1
         if code == 'newline':
             coord_x = 0
             coord_y += 1

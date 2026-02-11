@@ -1,3 +1,4 @@
 /se_env
-/__pycache__
+/__pycache__/*.pyc
 *.pyc
+test_algo.py

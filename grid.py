@@ -4,7 +4,7 @@ grid = open('data/ascii-art.txt', 'r')
 def identify():
     GRID_LIST = list()
     for row in grid:
-        for x in range(39):
+        for x in range(40):
             if row[x] == 'A':
                 GRID_LIST.append('wall')
             if row[x] == 'G':
@@ -17,7 +17,7 @@ def identify():
                 GRID_LIST.append('blacktile')
         GRID_LIST.append('newline')
     return GRID_LIST
-            
+
         
         
         
