@@ -1,4 +1,5 @@
 import pyglet
+import canvas
 # Load stuff.
 window = pyglet.window.Window(width=1600,height=800,caption="Sector 8")
 
