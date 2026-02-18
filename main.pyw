@@ -29,7 +29,7 @@ def on_draw():
     # Clear the window to avoid drawing over previous frames
     window.clear()
     
-    PlayMusic.player.play()
+    canvas.SectorEight.play('audio/main-music.wav')
 
             
     main_batch.draw()

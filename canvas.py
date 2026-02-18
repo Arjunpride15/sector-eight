@@ -2,7 +2,6 @@ import grid
 import tastyerrors
 import time
 import pyglet
-
 class SectorEight:
     def __init__(self, interface, LIST_INTERFACE):
         self._map = None
@@ -42,13 +41,19 @@ class SectorEight:
                     
     @staticmethod
     def play(file, **kwargs):
+        """Plays a music file."""
         sound = pyglet.media.load(file, streaming=False)
     
         player = pyglet.media.Player()
         player.queue(sound)
         if kwargs:
-            player.volume = kwargs[volume]
-            player.loop = kwargs[loop]
+            try:
+                player.volume = kwargs['volume']
+                player.loop = kwargs['loop']
+            except NameError:
+                raiser = tastyerrors.TastyRaiser()
+                raiser.set_error_msg('Invalid keyword Arguments')
+                raiser.RaiseTasty('ProcessingError')
         else:
             player.volume = 0.5  # Set volume (0.0 to 1.0)
             player.loop = True   # Enable looping
