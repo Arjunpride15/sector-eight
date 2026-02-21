@@ -2,13 +2,14 @@ import grid
 import tastyerrors
 import time
 import pyglet
+from playsound import playsound
 class SectorEight:
     def __init__(self, interface, LIST_INTERFACE):
-        self._map = None
-        self.coord_x = None
-        self.coord_y = None
+        self.map_ = grid.identify()
+        self.coord_x = 0
+        self.coord_y = 0
         self.interface = interface
-        SELF.LIST_INTERFACE = LIST_INTERFACE
+        self.LIST_INTERFACE = LIST_INTERFACE
         
         
     def canvas_init(self):
@@ -40,21 +41,8 @@ class SectorEight:
                     
                     
     @staticmethod
-    def play(file, **kwargs):
-        """Plays a music file."""
-        sound = pyglet.media.load(file, streaming=False)
+    def play(file):
+        playsound("audio/main-music.wav")
     
-        player = pyglet.media.Player()
-        player.queue(sound)
-        if kwargs:
-            try:
-                player.volume = kwargs['volume']
-                player.loop = kwargs['loop']
-            except NameError:
-                raiser = tastyerrors.TastyRaiser()
-                raiser.set_error_msg('Invalid keyword Arguments')
-                raiser.RaiseTasty('ProcessingError')
-        else:
-            player.volume = 0.5  # Set volume (0.0 to 1.0)
-            player.loop = True   # Enable looping
-        player.play()
+    def start_(self):
+        pyglet.app.run()

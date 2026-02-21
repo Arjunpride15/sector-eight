@@ -15,12 +15,13 @@ limitations under the License.
 '''
 import pyglet
 import canvas
+import threading
 # Load stuff.
 window = pyglet.window.Window(width=1600,height=800,caption="Sector 8")
 
 main_batch = pyglet.graphics.Batch()
 LIST_INTERFACE = list()
-
+se = canvas.SectorEight(main_batch, LIST_INTERFACE)
     
 
 
@@ -28,13 +29,8 @@ LIST_INTERFACE = list()
 def on_draw():
     # Clear the window to avoid drawing over previous frames
     window.clear()
-    
-    canvas.SectorEight.play('audio/main-music.wav')
-
-            
+    se.canvas_init()
     main_batch.draw()
-    
-
-
-
-pyglet.app.run()
+    se.play("audio/main-music.wav")
+   
+se.start_()
