@@ -1,0 +1,10 @@
+[license_info]
+license = "Apache License, Version 2.0"
+LicensePath = "LICENSE"
+
+[music]
+def_file = "audio/main-music.wav"
+# Need to add paths to sound effects
+
+[data]
+MatrixRenderingFile = "data/ascii-art.txt"

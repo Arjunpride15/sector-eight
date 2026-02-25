@@ -13,3 +13,4 @@ simpleaudio==1.0.4
 tastyerrors==2025.0.2
 wheel==0.45.1
 playsound==1.2.2
+tomli==2.4.0

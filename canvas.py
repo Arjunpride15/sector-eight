@@ -3,6 +3,9 @@ import tastyerrors
 import time
 import pyglet
 from playsound import playsound
+import conf
+
+confObj = conf.Config()
 class SectorEight:
     def __init__(self, interface, LIST_INTERFACE):
         self.map_ = grid.identify()
@@ -42,7 +45,11 @@ class SectorEight:
                     
     @staticmethod
     def play(file):
-        playsound("audio/main-music.wav")
+        playsound(file)
+    @classmethod
+    def play_main_music_file(cls):
+        while True:
+            cls.play(confObj.main_music_path())
     
     def start_(self):
         pyglet.app.run()
