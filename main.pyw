@@ -24,13 +24,25 @@ LIST_INTERFACE = list()
 se = canvas.SectorEight(main_batch, LIST_INTERFACE)
     
 
-threading.Thread(target=se.play_main_music_file, daemon=True).start()
+se.play_main_music_file()
+eater = None
 @window.event
 def on_draw():
+    global eater
     # Clear the window to avoid drawing over previous frames
     window.clear()
     se.canvas_init()
+    
     main_batch.draw()
+    
+@window.event
+def on_close():
+    se.stop_music()
+@window.event
+def on_key_press(symbol):
+    # Add keypress things...
+    pass
+    
 
 
    

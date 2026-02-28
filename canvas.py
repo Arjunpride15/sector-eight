@@ -5,7 +5,6 @@ import pyglet
 from playsound import playsound
 import conf
 
-confObj = conf.Config()
 class SectorEight:
     def __init__(self, interface, LIST_INTERFACE):
         self.map_ = grid.identify()
@@ -13,6 +12,11 @@ class SectorEight:
         self.coord_y = 0
         self.interface = interface
         self.LIST_INTERFACE = LIST_INTERFACE
+        self.confObj = conf.Config()
+        self.background_source = None
+        self.music_player = None
+        self.main_music_file = self.confObj.main_music_path()
+        
         
         
     def canvas_init(self):
@@ -40,16 +44,24 @@ class SectorEight:
                 if code == 'newline':
                     self.coord_x = 0
                     self.coord_y += 1
-                    
-                    
-                    
-    @staticmethod
-    def play(file):
-        playsound(file)
-    @classmethod
-    def play_main_music_file(cls):
-        while True:
-            cls.play(confObj.main_music_path())
+
+
+                        
+    def play(self, music_file):
+        # 1. Load the file into memory (High performance, no lag)
+        self.background_source = pyglet.media.load(music_file, streaming=True)
+        
+        # 2. Create a persistent player instance
+        self.music_player = pyglet.media.Player()
+        
+        # 3. Queue the source
+        self.music_player.queue(self.background_source)
+        self.music_player.loop = True
+        self.music_player.play()
+    def stop_music(self):
+        self.music_player.pause()
+    def play_main_music_file(self):
+        self.__class__.play(self, self.main_music_file)
     
     def start_(self):
         pyglet.app.run()
