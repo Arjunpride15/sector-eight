@@ -16,32 +16,38 @@
 import pyglet
 import canvas
 import threading
+from pyglet.window import key
 # Load stuff.
+pyglet.options['audio_buffer_size'] = 8192
 window = pyglet.window.Window(width=1600,height=800,caption="Sector 8")
 
 main_batch = pyglet.graphics.Batch()
-LIST_INTERFACE = list()
-se = canvas.SectorEight(main_batch, LIST_INTERFACE)
+se = canvas.SectorEight(main_batch)
     
 
 se.play_main_music_file()
-eater = None
 @window.event
 def on_draw():
-    global eater
+    
     # Clear the window to avoid drawing over previous frames
     window.clear()
-    se.canvas_init()
-    
+    se.canvas_init()    
     main_batch.draw()
+eater = se.return_eater()
     
 @window.event
 def on_close():
     se.stop_music()
 @window.event
-def on_key_press(symbol):
-    # Add keypress things...
-    pass
+def on_key_press(symbol, modifiers):
+    if symbol == key.UP:
+        game.direction = (0, 1)
+    elif symbol == key.DOWN:
+        game.direction = (0, -1)
+    elif symbol == key.LEFT:
+        game.direction = (-1, 0)
+    elif symbol == key.RIGHT:
+        game.direction = (1, 0)
     
 
 

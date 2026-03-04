@@ -2,66 +2,113 @@ import grid
 import tastyerrors
 import time
 import pyglet
-from playsound import playsound
 import conf
+import miniaudio
 
 class SectorEight:
-    def __init__(self, interface, LIST_INTERFACE):
+    def __init__(self, interface):
         self.map_ = grid.identify()
         self.coord_x = 0
         self.coord_y = 0
         self.interface = interface
-        self.LIST_INTERFACE = LIST_INTERFACE
         self.confObj = conf.Config()
-        self.background_source = None
-        self.music_player = None
         self.main_music_file = self.confObj.main_music_path()
-        
-        
-        
+        self.main_stream = miniaudio.stream_file(self.main_music_file)
+        self.device = miniaudio.PlaybackDevice()
+        self.food_dict = {}
+        self.ghost_dict = {}
+        self.eater_sprite = None
+        self.food_sprite = None
+        self.ghost_sprite = None
+        self.music_switch = False
+        self.walls = list()
+        self.direction = (0, 0)  # (dx, dy)
+        self.speed = 120         # Pixels per second
+                
+
     def canvas_init(self):
-            for code in self.map_:
-                if code == 'wall':
-                    self.LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/tile.gif')), \
-                                                               x=(self.coord_x * 40), y=(self.coord_y * 40), batch=self.interface))
-                    self.coord_x += 1
-                if code == 'blacktile':
-                    self.LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/blacktile.gif')), \
-                                                               x=(self.coord_x * 40), y=(self.coord_y * 40), batch=self.interface))
-                    self.coord_x += 1
-                if code == 'food':
-                    self.LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/pellet.gif')), \
-                                                               x=(self.coord_x * 40), y=(self.coord_y * 40), batch=self.interface))
-                    self.coord_x += 1
-                if code == 'ghost':
-                    self.LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/ghost.gif')), \
-                                                               x=(self.coord_x * 40), y=(self.coord_y * 40), batch=self.interface))
-                    self.coord_x += 1
-                if code == 'eater':
-                    self.LIST_INTERFACE.append(pyglet.sprite.Sprite(img=(pyglet.resource.image('images/eater.gif')), \
-                                                               x=(self.coord_x * 40), y=(self.coord_y * 40), batch=self.interface))
-                    self.coord_x += 1
-                if code == 'newline':
-                    self.coord_x = 0
-                    self.coord_y += 1
-
-
+        
+        for code in self.map_:
+            
+            px, py = self.coord_x * 40, self.coord_y * 40
+            
+            if code == 'wall':
+                # Remove .draw() - the Batch handles it!
+                s = pyglet.sprite.Sprite(img=pyglet.resource.image('images/tile.gif'), 
+                                         x=px, y=py, batch=self.interface)
+                self.walls.append(s)
+                self.coord_x += 1
+                
+            elif code == 'blacktile':
+                s = pyglet.sprite.Sprite(img=pyglet.resource.image('images/blacktile.gif'), 
+                                         x=px, y=py, batch=self.interface)
+                self.walls.append(s)
+                self.coord_x += 1
+                
+            elif code == 'food':
+                self.food_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/pellet.gif'), 
+                                                       x=px, y=py, batch=self.interface)
+                # Use a tuple key for faster lookup
+                self.food_dict[(self.coord_x, self.coord_y)] = self.food_sprite
+                self.coord_x += 1
+                
+            elif code == 'ghost':
+                # Changed to a list in dict because you might have multiple ghosts!
+                ghost = pyglet.sprite.Sprite(img=pyglet.resource.image('images/pellet.gif'), 
+                                            x=px, y=py, batch=self.interface)
+                self.ghost_dict[(self.coord_x, self.coord_y)] = ghost
+                self.coord_x += 1
+                
+            elif code == 'eater':
+                self.eater_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/eater.gif'), 
+                                                        x=px, y=py, batch=self.interface)
+                self.coord_x += 1
+                
+            elif code == 'newline':
+                self.coord_x = 0
+                self.coord_y += 1
+    def return_eater(self):
+        return self.eater_sprite
                         
-    def play(self, music_file):
-        # 1. Load the file into memory (High performance, no lag)
-        self.background_source = pyglet.media.load(music_file, streaming=True)
+    def play(self, **kwargs):
+        try:
+            if not kwargs:
+                # Start the device (Music starts)
+                if not self.music_switch:
+                    self.device.start(self.main_stream)
+                    self.music_switch = True                    
+            else:
+                stream = miniaudio.stream_file(kwargs['music_file'])
+                self.device.start(stream)
+        except KeyError:
+            return 'KeyError Encountered'
         
-        # 2. Create a persistent player instance
-        self.music_player = pyglet.media.Player()
-        
-        # 3. Queue the source
-        self.music_player.queue(self.background_source)
-        self.music_player.loop = True
-        self.music_player.play()
     def stop_music(self):
-        self.music_player.pause()
+        self.device.stop()
+        
     def play_main_music_file(self):
-        self.__class__.play(self, self.main_music_file)
-    
+        self.__class__.play(self)
+        
+    def resume_music(self):
+        self.device.start(self.stream)
+    def update(self, dt):
+        if self.eater_sprite:
+            # Calculate potential new position
+            new_x = self.eater_sprite.x + (self.direction[0] * self.speed * dt)
+            new_y = self.eater_sprite.y + (self.direction[1] * self.speed * dt)
+            
+            # For now, let's just move him. 
+            # (Next, we'll add wall collision logic here!)
+            self.eater_sprite.x = new_x
+            self.eater_sprite.y = new_y
+
+            # Check for food collision
+            grid_pos = (int(new_x // 40), int(new_y // 40))
+            if grid_pos in self.food_dict:
+                self.food_dict[grid_pos].delete() # Remove from screen
+                del self.food_dict[grid_pos]      # Remove from memory
+                # You could play a 'chomp' sound here too!
+        
     def start_(self):
+        pyglet.clock.schedule_interval(self.update, 1/60.0)
         pyglet.app.run()
