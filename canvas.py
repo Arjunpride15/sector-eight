@@ -13,7 +13,7 @@ class SectorEight:
         self.interface = pyglet.graphics.Batch()
         self.confObj = conf.Config()
         self.main_music_file = self.confObj.main_music_path()
-        self.main_stream = miniaudio.stream_file(self.main_music_file)
+        self.main_stream = None
         self.device = miniaudio.PlaybackDevice()
         self.food_dict = {}
         self.ghost_dict = {}
@@ -29,53 +29,46 @@ class SectorEight:
     def canvas_init(self):
         
         for code in self.map_:
-            
             px, py = self.coord_x * 40, self.coord_y * 40
             
             if code == 'wall':
-                # Remove .draw() - the Batch handles it!
                 s = pyglet.sprite.Sprite(img=pyglet.resource.image('images/tile.gif'), 
-                                         x=px, y=py, batch=self.interface)
+                                        x=px, y=py, batch=self.interface)
                 self.walls.append(s)
-                self.coord_x += 1
-                
             elif code == 'blacktile':
                 s = pyglet.sprite.Sprite(img=pyglet.resource.image('images/blacktile.gif'), 
-                                         x=px, y=py, batch=self.interface)
+                                        x=px, y=py, batch=self.interface)
                 self.walls.append(s)
-                self.coord_x += 1
-                
             elif code == 'food':
                 self.food_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/pellet.gif'), 
-                                                       x=px, y=py, batch=self.interface)
-                # Use a tuple key for faster lookup
+                                                    x=px, y=py, batch=self.interface)
                 self.food_dict[(self.coord_x, self.coord_y)] = self.food_sprite
-                self.coord_x += 1
-                
             elif code == 'ghost':
-                # Changed to a list in dict because you might have multiple ghosts!
-                ghost = pyglet.sprite.Sprite(img=pyglet.resource.image('images/pellet.gif'), 
+                ghost = pyglet.sprite.Sprite(img=pyglet.resource.image('images/ghost.gif'), 
                                             x=px, y=py, batch=self.interface)
                 self.ghost_dict[(self.coord_x, self.coord_y)] = ghost
-                self.coord_x += 1
-                
             elif code == 'eater':
                 self.eater_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/eater.gif'), 
                                                         x=px, y=py, batch=self.interface)
-                self.coord_x += 1
-                
-            elif code == 'newline':
+            
+            # Handle coordinate movement
+            if code == 'newline':
                 self.coord_x = 0
                 self.coord_y += 1
+            else:
+                # Increment X for EVERYTHING that isn't a newline
+                self.coord_x += 1
                         
     def play(self, **kwargs):
         try:
             if not kwargs:
-                # Start the device (Music starts)
                 if not self.music_switch:
+                    # Use the loop=True parameter here
+                    self.main_stream = miniaudio.stream_file(self.main_music_file)
                     self.device.start(self.main_stream)
                     self.music_switch = True                    
             else:
+                # For custom music files passed via kwargs
                 stream = miniaudio.stream_file(kwargs['music_file'])
                 self.device.start(stream)
         except KeyError:
@@ -83,9 +76,12 @@ class SectorEight:
         
     def stop_music(self):
         self.device.stop()
+        self.music_switch = False
         
-    def play_main_music_file(self):
+    def play_main_music_file(self, dt):
+        
         self.__class__.play(self)
+        
         
     def resume_music(self):
         self.device.start(self.stream)
@@ -111,4 +107,5 @@ class SectorEight:
         return self.interface    
     def start_(self):
         pyglet.clock.schedule_interval(self.update, 1/60.0)
+        pyglet.clock.schedule_interval(self.play_main_music_file, 43/60.0)
         pyglet.app.run()

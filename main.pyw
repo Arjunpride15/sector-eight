@@ -18,20 +18,19 @@ import canvas
 import threading
 from pyglet.window import key
 # Load stuff.
-pyglet.options['audio_buffer_size'] = 8192
 window = pyglet.window.Window(width=1600,height=800,caption="Sector 8")
 
 
 se = canvas.SectorEight()
     
 
-se.play_main_music_file()
+
+se.canvas_init()
 @window.event
 def on_draw():
     
     # Clear the window to avoid drawing over previous frames
     window.clear()
-    se.canvas_init()
     se.interface.draw()
 
     

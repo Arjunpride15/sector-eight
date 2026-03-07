@@ -1,23 +1,18 @@
 
 
-grid = open('data/ascii-art.txt', 'r')
 def identify():
-    
-    for row in grid:
-        for x in range(40):
-            if row[x] == 'A':
-                yield 'wall'
-            if row[x] == 'G':
-                yield 'ghost'
-            if row[x] == 'E':
-                yield 'food'
-            if row[x] == 'P':
-                yield 'eater'
-            if row[x] == ' ':
-                yield 'blacktile'
-        yield 'newline'
-    
-
+    with open('data/ascii-art.txt', 'r') as f:
+        for row in f:
+            # row.rstrip() removes the invisible \n and trailing spaces
+            clean_row = row.rstrip('\n\r') 
+            for char in clean_row:
+                if char == 'A': yield 'wall'
+                elif char == 'G': yield 'ghost'
+                elif char == 'E': yield 'food'
+                elif char == 'P': yield 'eater'
+                elif char == ' ': yield 'blacktile'
+            # Tell the canvas to reset X and increment Y
+            yield 'newline'
         
         
         
