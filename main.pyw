@@ -32,9 +32,8 @@ def on_draw():
     # Clear the window to avoid drawing over previous frames
     window.clear()
     se.canvas_init()
-    main_batch = se.return_batch()    
-    main_batch.draw()
-eater = se.return_eater()
+    se.interface.draw()
+
     
 @window.event
 def on_close():
@@ -42,13 +41,13 @@ def on_close():
 @window.event
 def on_key_press(symbol, modifiers):
     if symbol == key.UP:
-        game.direction = (0, 1)
+        se.direction = (0, 1)
     elif symbol == key.DOWN:
-        game.direction = (0, -1)
+        se.direction = (0, -1)
     elif symbol == key.LEFT:
-        game.direction = (-1, 0)
+        se.direction = (-1, 0)
     elif symbol == key.RIGHT:
-        game.direction = (1, 0)
+        se.direction = (1, 0)
     
 
 
