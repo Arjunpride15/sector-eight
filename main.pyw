@@ -21,8 +21,8 @@ from pyglet.window import key
 pyglet.options['audio_buffer_size'] = 8192
 window = pyglet.window.Window(width=1600,height=800,caption="Sector 8")
 
-main_batch = pyglet.graphics.Batch()
-se = canvas.SectorEight(main_batch)
+
+se = canvas.SectorEight()
     
 
 se.play_main_music_file()
@@ -31,7 +31,8 @@ def on_draw():
     
     # Clear the window to avoid drawing over previous frames
     window.clear()
-    se.canvas_init()    
+    se.canvas_init()
+    main_batch = se.return_batch()    
     main_batch.draw()
 eater = se.return_eater()
     

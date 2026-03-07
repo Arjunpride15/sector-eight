@@ -6,11 +6,11 @@ import conf
 import miniaudio
 
 class SectorEight:
-    def __init__(self, interface):
+    def __init__(self):
         self.map_ = grid.identify()
         self.coord_x = 0
         self.coord_y = 0
-        self.interface = interface
+        self.interface = pyglet.graphics.Batch()
         self.confObj = conf.Config()
         self.main_music_file = self.confObj.main_music_path()
         self.main_stream = miniaudio.stream_file(self.main_music_file)
@@ -91,24 +91,9 @@ class SectorEight:
         
     def resume_music(self):
         self.device.start(self.stream)
-    def update(self, dt):
-        if self.eater_sprite:
-            # Calculate potential new position
-            new_x = self.eater_sprite.x + (self.direction[0] * self.speed * dt)
-            new_y = self.eater_sprite.y + (self.direction[1] * self.speed * dt)
-            
-            # For now, let's just move him. 
-            # (Next, we'll add wall collision logic here!)
-            self.eater_sprite.x = new_x
-            self.eater_sprite.y = new_y
-
-            # Check for food collision
-            grid_pos = (int(new_x // 40), int(new_y // 40))
-            if grid_pos in self.food_dict:
-                self.food_dict[grid_pos].delete() # Remove from screen
-                del self.food_dict[grid_pos]      # Remove from memory
-                # You could play a 'chomp' sound here too!
-        
+    
+    def return_batch(self):
+        return self.interface    
     def start_(self):
-        pyglet.clock.schedule_interval(self.update, 1/60.0)
+        
         pyglet.app.run()
