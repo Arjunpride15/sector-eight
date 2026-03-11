@@ -17,6 +17,7 @@ import pyglet
 import canvas
 import threading
 from pyglet.window import key
+import sys
 # Load stuff.
 window = pyglet.window.Window(width=1600,height=800,caption="Sector 8")
 
@@ -37,15 +38,17 @@ def on_draw():
 @window.event
 def on_close():
     se.stop_music()
+    
+    
 @window.event
 def on_key_press(symbol, modifiers):
-    if symbol == key.UP:
+    if symbol == key.UP or symbol == key.W:
         se.direction = (0, 1)
-    elif symbol == key.DOWN:
+    elif symbol == key.DOWN or symbol == key.S:
         se.direction = (0, -1)
-    elif symbol == key.LEFT:
+    elif symbol == key.LEFT or symbol == key.A:
         se.direction = (-1, 0)
-    elif symbol == key.RIGHT:
+    elif symbol == key.RIGHT or symbol == key.D:
         se.direction = (1, 0)
     
 

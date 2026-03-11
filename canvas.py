@@ -38,7 +38,7 @@ class SectorEight:
             elif code == 'blacktile':
                 s = pyglet.sprite.Sprite(img=pyglet.resource.image('images/blacktile.gif'), 
                                         x=px, y=py, batch=self.interface)
-                self.walls.append(s)
+                
             elif code == 'food':
                 self.food_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/pellet.gif'), 
                                                     x=px, y=py, batch=self.interface)
@@ -63,14 +63,17 @@ class SectorEight:
         try:
             if not kwargs:
                 if not self.music_switch:
+                    
+                    device = miniaudio.PlaybackDevice()
                     # Use the loop=True parameter here
-                    self.main_stream = miniaudio.stream_file(self.main_music_file)
-                    self.device.start(self.main_stream)
+                    main_stream = miniaudio.stream_file(self.main_music_file)
+                    device.start(main_stream)
                     self.music_switch = True                    
             else:
                 # For custom music files passed via kwargs
+                device = miniaudio.PlaybackDevice()
                 stream = miniaudio.stream_file(kwargs['music_file'])
-                self.device.start(stream)
+                device.start(stream)
         except KeyError:
             return 'KeyError Encountered'
         
@@ -87,21 +90,33 @@ class SectorEight:
         self.device.start(self.stream)
     def update(self, dt):
         if self.eater_sprite:
-            # Calculate potential new position
+            # 1. Calculate the potential new position based on speed and direction 
             new_x = self.eater_sprite.x + (self.direction[0] * self.speed * dt)
             new_y = self.eater_sprite.y + (self.direction[1] * self.speed * dt)
             
-            # For now, let's just move him. 
-            # (Next, we'll add wall collision logic here!)
-            self.eater_sprite.x = new_x
-            self.eater_sprite.y = new_y
+            # 2. Check for wall collisions BEFORE moving 
+            collision = False
+            for wall in self.walls:
+                # Check if the eater's new bounding box overlaps with the wall 
+                if (new_x < wall.x + wall.width and
+                    new_x + self.eater_sprite.width > wall.x and
+                    new_y < wall.y + wall.height and
+                    new_y + self.eater_sprite.height > wall.y):
+                    collision = True
+                    break  # Stop checking once a collision is found
 
-            # Check for food collision
-            grid_pos = (int(new_x // 40), int(new_y // 40))
+            # 3. Only update position if the path is clear
+            if not collision:
+                self.eater_sprite.x = new_x
+                self.eater_sprite.y = new_y
+
+            # 4. Check for food collision (existing logic) 
+            grid_pos = (int(self.eater_sprite.x // 40), int(self.eater_sprite.y // 40))
             if grid_pos in self.food_dict:
-                self.food_dict[grid_pos].delete() # Remove from screen
-                del self.food_dict[grid_pos]      # Remove from memory
-                # You could play a 'chomp' sound here too!
+                self.food_dict[grid_pos].delete() 
+                del self.food_dict[grid_pos]      
+                # Note: Using self.play() here is cleaner than self.__class__.play(self, ...)
+                self.play(music_file=self.confObj.toml_dict['music']['chompEffect'])
     
     def return_batch(self):
         return self.interface    

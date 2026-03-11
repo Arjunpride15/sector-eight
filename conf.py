@@ -13,7 +13,7 @@ class Config:
         with open("config/config.toml", "rb") as f:
             self.toml_dict = tomli.load(f)
     def main_music_path(self):
-        return self.toml_dict['music']['def_file']
+        return self.toml_dict['music']['background']
     
                 
     
