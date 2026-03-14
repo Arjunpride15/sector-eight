@@ -3,24 +3,41 @@ import tastyerrors
 import time
 import pyglet
 import conf
+import winsound
 import miniaudio
+import shelve
 
 class SectorEight:
     def __init__(self):
+        # Basic stuff
         self.map_ = grid.identify()
         self.coord_x = 0
         self.coord_y = 0
         self.interface = pyglet.graphics.Batch()
         self.confObj = conf.Config()
+        # Music stuff
         self.main_music_file = self.confObj.main_music_path()
-        self.main_stream = None
-        self.device = miniaudio.PlaybackDevice()
+        
+        # For canvas_init()
         self.food_dict = {}
         self.ghost_dict = {}
         self.eater_sprite = None
         self.food_sprite = None
         self.ghost_sprite = None
         self.music_switch = False
+        # Pellets!
+        self.data_store = shelve.open('game_data')
+        self.pellets = self.data_store.get('pellets', 0)
+        self.pellet_label = pyglet.text.Label(
+            f'Pellets: {self.pellets}',
+            font_name='Courier New',
+            font_size=18,
+            x=20, y=800, # Positioning in the bottom-left
+            anchor_x='left', anchor_y='bottom',
+            batch=self.interface,
+            color=(255, 255, 0, 255) # Yellow/Gold color
+        )
+        
         self.walls = list()
         self.direction = (0, 0)  # (dx, dy)
         self.speed = 120         # Pixels per second
@@ -63,12 +80,8 @@ class SectorEight:
         try:
             if not kwargs:
                 if not self.music_switch:
-                    
-                    device = miniaudio.PlaybackDevice()
-                    # Use the loop=True parameter here
-                    main_stream = miniaudio.stream_file(self.main_music_file)
-                    device.start(main_stream)
-                    self.music_switch = True                    
+                    winsound.PlaySound("audio/main-music.wav", winsound.SND_FILENAME | winsound.SND_LOOP | winsound.SND_ASYNC)
+                                       
             else:
                 # For custom music files passed via kwargs
                 device = miniaudio.PlaybackDevice()
@@ -78,49 +91,66 @@ class SectorEight:
             return 'KeyError Encountered'
         
     def stop_music(self):
-        self.device.stop()
+        winsound.PlaySound(None, winsound.SND_FILENAME)
         self.music_switch = False
+    
         
     def play_main_music_file(self, dt):
         
         self.__class__.play(self)
         
         
-    def resume_music(self):
-        self.device.start(self.stream)
+    
     def update(self, dt):
         if self.eater_sprite:
-            # 1. Calculate the potential new position based on speed and direction 
+            # 1. Calculate the potential new position
             new_x = self.eater_sprite.x + (self.direction[0] * self.speed * dt)
             new_y = self.eater_sprite.y + (self.direction[1] * self.speed * dt)
             
-            # 2. Check for wall collisions BEFORE moving 
+            # 2. Collision Leeway (Hitbox Shrinking)
+            # We subtract a few pixels from the edges so the eater 'fits' better
+            padding = 6 
+            
             collision = False
             for wall in self.walls:
-                # Check if the eater's new bounding box overlaps with the wall 
-                if (new_x < wall.x + wall.width and
-                    new_x + self.eater_sprite.width > wall.x and
-                    new_y < wall.y + wall.height and
-                    new_y + self.eater_sprite.height > wall.y):
+                # Check overlap with padding applied to the eater's box
+                if (new_x + padding < wall.x + wall.width and
+                    new_x + self.eater_sprite.width - padding > wall.x and
+                    new_y + padding < wall.y + wall.height and
+                    new_y + self.eater_sprite.height - padding > wall.y):
                     collision = True
-                    break  # Stop checking once a collision is found
+                    break
 
-            # 3. Only update position if the path is clear
+            # 3. Apply movement if clear
             if not collision:
                 self.eater_sprite.x = new_x
                 self.eater_sprite.y = new_y
 
-            # 4. Check for food collision (existing logic) 
-            grid_pos = (int(self.eater_sprite.x // 40), int(self.eater_sprite.y // 40))
+            # 4. Pellet Detection (Your original logic)
+            # We use +20 to check the 'tile' the eater is mostly over
+            grid_pos = (int((self.eater_sprite.x + 20) // 40), 
+                        int((self.eater_sprite.y + 20) // 40))
+            
             if grid_pos in self.food_dict:
+                # Remove pellet and update count
                 self.food_dict[grid_pos].delete() 
                 del self.food_dict[grid_pos]      
-                # Note: Using self.play() here is cleaner than self.__class__.play(self, ...)
-                self.play(music_file=self.confObj.toml_dict['music']['chompEffect'])
+                
+                self.pellets += 1
+                self.pellet_label.text = f'Pellets: {self.pellets}'
+                
+                # Persistence
+                self.data_store['pellets'] = self.pellets
+                self.data_store.sync()
+                
+                # Audio
+                chomp_path = self.confObj.toml_dict['music']['chompEffect']
+                self.play(music_file=chomp_path)
     
     def return_batch(self):
         return self.interface    
     def start_(self):
         pyglet.clock.schedule_interval(self.update, 1/60.0)
-        pyglet.clock.schedule_interval(self.play_main_music_file, 43/60.0)
+        self.play_main_music_file(self)
+        pyglet.clock.schedule_interval(self.play_main_music_file, 43)
         pyglet.app.run()

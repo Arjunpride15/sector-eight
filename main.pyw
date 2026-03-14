@@ -18,8 +18,9 @@ import canvas
 import threading
 from pyglet.window import key
 import sys
+import time
 # Load stuff.
-window = pyglet.window.Window(width=1600,height=800,caption="Sector 8")
+window = pyglet.window.Window(width=1600,height=850,caption="Sector 8")
 
 
 se = canvas.SectorEight()
@@ -27,6 +28,8 @@ se = canvas.SectorEight()
 
 
 se.canvas_init()
+pyglet.clock.schedule_interval(se.play_main_music_file, 43)
+    
 @window.event
 def on_draw():
     
@@ -38,7 +41,12 @@ def on_draw():
 @window.event
 def on_close():
     se.stop_music()
+    # Safely close the shelf to save data
+    if hasattr(se, 'data_store'):
+        se.data_store.close()
     
+    # Close the window
+    window.close()
     
 @window.event
 def on_key_press(symbol, modifiers):
