@@ -19,6 +19,7 @@ import threading
 from pyglet.window import key
 import sys
 import time
+
 # Load stuff.
 window = pyglet.window.Window(width=1600,height=850,caption="Sector 8")
 
@@ -58,6 +59,12 @@ def on_key_press(symbol, modifiers):
         se.direction = (-1, 0)
     elif symbol == key.RIGHT or symbol == key.D:
         se.direction = (1, 0)
+    elif symbol == key.SPACE:
+        se.laser()
+@window.event
+def on_key_release(symbol, modifiers):
+    if symbol == key.SPACE:
+        del se.horizontal_line
     
 
 

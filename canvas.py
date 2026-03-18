@@ -6,7 +6,8 @@ import conf
 import winsound
 import miniaudio
 import shelve
-
+from pyglet import shapes
+import threading
 class SectorEight:
     def __init__(self):
         # Basic stuff
@@ -42,7 +43,7 @@ class SectorEight:
         self.direction = (0, 0)  # (dx, dy)
         self.speed = 120         # Pixels per second
                 
-
+    
     def canvas_init(self):
         
         for code in self.map_:
@@ -75,6 +76,7 @@ class SectorEight:
             else:
                 # Increment X for EVERYTHING that isn't a newline
                 self.coord_x += 1
+    
                         
     def play(self, **kwargs):
         try:
@@ -89,6 +91,7 @@ class SectorEight:
                 device.start(stream)
         except KeyError:
             return 'KeyError Encountered'
+    
         
     def stop_music(self):
         winsound.PlaySound(None, winsound.SND_FILENAME)
@@ -99,8 +102,14 @@ class SectorEight:
         
         self.__class__.play(self)
         
+    def laser(self):
         
-    
+        self.horizontal_line = shapes.Line(0, self.eater_sprite.y, 1600,self.eater_sprite.y , \
+                                            thickness=4, color=(21, 234, 100), batch=self.interface)
+        self.horizontal_line.opacity = 150
+        
+        
+        
     def update(self, dt):
         if self.eater_sprite:
             # 1. Calculate the potential new position
@@ -148,9 +157,10 @@ class SectorEight:
                 self.play(music_file=chomp_path)
     
     def return_batch(self):
-        return self.interface    
+        return self.interface
+       
     def start_(self):
         pyglet.clock.schedule_interval(self.update, 1/60.0)
         self.play_main_music_file(self)
-        pyglet.clock.schedule_interval(self.play_main_music_file, 43)
+        
         pyglet.app.run()
