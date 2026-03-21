@@ -5,6 +5,7 @@ LicensePath = "LICENSE"
 [music]
 background = "audio/main-music.wav"
 chompEffect = "audio/chomp.wav"
+laserBeamEffect = "audio/laser.wav"
 
 [data]
 MatrixRenderingFile = "data/ascii-art.txt"

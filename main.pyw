@@ -64,7 +64,7 @@ def on_key_press(symbol, modifiers):
 @window.event
 def on_key_release(symbol, modifiers):
     if symbol == key.SPACE:
-        del se.horizontal_line
+        se.laser_obj = None
     
 
 

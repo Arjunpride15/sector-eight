@@ -26,22 +26,36 @@ class SectorEight:
         self.food_sprite = None
         self.ghost_sprite = None
         self.music_switch = False
+        self.walls = list()
         # Pellets!
         self.data_store = shelve.open('game_data')
         self.pellets = self.data_store.get('pellets', 0)
         self.pellet_label = pyglet.text.Label(
             f'Pellets: {self.pellets}',
-            font_name='Courier New',
+            font_name='Cascadia Mono',
             font_size=18,
-            x=20, y=800, # Positioning in the bottom-left
+            x=20, y=800,
             anchor_x='left', anchor_y='bottom',
             batch=self.interface,
             color=(255, 255, 0, 255) # Yellow/Gold color
+        
         )
+        self.laser_powers = 5
+        self.laser_label = pyglet.text.Label(
+            f'Laser Power: {self.laser_powers}',
+            font_name='Cascadia Mono',
+            font_size=18,
+            x=200, y=800,
+            anchor_x='left', anchor_y='bottom',
+            batch=self.interface,
+            color=(34, 139, 34, 255)# Forest green color
+        )
+        self.laser_obj = None
         
         self.walls = list()
         self.direction = (0, 0)  # (dx, dy)
         self.speed = 120         # Pixels per second
+        self.TILE_SIDE = 40
                 
     
     def canvas_init(self):
@@ -103,13 +117,19 @@ class SectorEight:
         self.__class__.play(self)
         
     def laser(self):
-        
-        self.horizontal_line = shapes.Line(0, self.eater_sprite.y, 1600,self.eater_sprite.y , \
-                                            thickness=4, color=(21, 234, 100), batch=self.interface)
-        self.horizontal_line.opacity = 150
-        
-        
-        
+        if self.laser_powers >= 1:
+            self.laser_obj = shapes.Line(0, self.eater_sprite.y + (self.TILE_SIDE / 2), 1600, \
+                                        self.eater_sprite.y + (self.TILE_SIDE / 2), \
+                                        thickness=4, color=(21, 234, 100), batch=self.interface)
+            laser_path = self.confObj.toml_dict['music']['laserBeamEffect']
+            self.play(music_file=laser_path)
+            self.laser_obj.opacity = 150
+            self.laser_powers = self.laser_powers - 1
+            self.laser_label.text = f'Laser Power: {self.laser_powers}'
+        else:
+            self.laser_label.color = (237, 145, 33, 255)
+            self.laser_label.text = "Laser Power: Unavailable"
+                    
     def update(self, dt):
         if self.eater_sprite:
             # 1. Calculate the potential new position
@@ -155,6 +175,14 @@ class SectorEight:
                 # Audio
                 chomp_path = self.confObj.toml_dict['music']['chompEffect']
                 self.play(music_file=chomp_path)
+                
+            if not self.laser_obj == None:
+                # Laser detection
+                if self.laser_obj.x >= self.eater_sprite.x and self.laser_obj.x <= self.eater_sprite.x + self.TILE_SIDE:
+                    for wall_obj in self.walls:
+                        if wall_obj.x == laser_obj.x:
+                            wall_obj = pyglet.sprite.Sprite(img=pyglet.resource.image('images/blacktile.gif'), \
+                                    x=wall_obj.x, y=wall_obj.y, batch=self.interface)
     
     def return_batch(self):
         return self.interface
@@ -162,5 +190,5 @@ class SectorEight:
     def start_(self):
         pyglet.clock.schedule_interval(self.update, 1/60.0)
         self.play_main_music_file(self)
-        
+        # print(repr(self.walls))
         pyglet.app.run()
