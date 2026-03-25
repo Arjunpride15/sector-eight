@@ -8,13 +8,13 @@ A       E  A            A              A
 AAAAAAAAAA AAAAAAAAAA   AAAAAAAAAAAAAAAA
 A                    A                 A
 A   AAAAAAA    AAA   A   AAAAAAAAAAA   A
-A   E            G   A   A         A   A
-A   E     P      E   A   A   G     A   A
+A   E                A   A         A   A
+A   E     P      E   A   A         A   A
 A   A            E   A   A         A   A
 A   AAAAAAAAAAAAAA   A   AAAAAAAAAAA   A
 A                    A                 A
 AAAAAAAAAAAAAAAA   AAAAAAAAAA AAAAAAAAAA
-A                A                     A
+A                A               G     A
 A  AAAAAAAAEAAA  A  AAAAAAAAAAAAAAAAA  A
 A                A                     A
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

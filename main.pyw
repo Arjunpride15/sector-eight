@@ -61,6 +61,8 @@ def on_key_press(symbol, modifiers):
         se.direction = (1, 0)
     elif symbol == key.SPACE:
         se.laser()
+    elif symbol == key.TAB:
+        se.xp_speed()
 @window.event
 def on_key_release(symbol, modifiers):
     if symbol == key.SPACE:

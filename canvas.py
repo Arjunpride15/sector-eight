@@ -21,18 +21,18 @@ class SectorEight:
         
         # For canvas_init()
         self.food_dict = {}
-        self.ghost_dict = {}
         self.eater_sprite = None
         self.food_sprite = None
         self.ghost_sprite = None
         self.music_switch = False
         self.walls = list()
+        self.font_list = ['Cascadia Mono', 'Cascadia Code','Courier New']
         # Pellets!
         self.data_store = shelve.open('game_data')
         self.pellets = self.data_store.get('pellets', 0)
         self.pellet_label = pyglet.text.Label(
             f'Pellets: {self.pellets}',
-            font_name='Cascadia Mono',
+            font_name=self.font_list,
             font_size=18,
             x=20, y=800,
             anchor_x='left', anchor_y='bottom',
@@ -40,10 +40,11 @@ class SectorEight:
             color=(255, 255, 0, 255) # Yellow/Gold color
         
         )
+        # Laser Stuff
         self.laser_powers = 5
         self.laser_label = pyglet.text.Label(
             f'Laser Power: {self.laser_powers}',
-            font_name='Cascadia Mono',
+            font_name=self.font_list,
             font_size=18,
             x=200, y=800,
             anchor_x='left', anchor_y='bottom',
@@ -51,11 +52,21 @@ class SectorEight:
             color=(34, 139, 34, 255)# Forest green color
         )
         self.laser_obj = None
-        
+        self.xp_speedups = 3
+        self.xp_label = pyglet.text.Label(
+            f'XP Speedups: {self.xp_speedups}',
+            font_name=self.font_list,
+            font_size=18,
+            x=480, y=800,
+            anchor_x='left', anchor_y='bottom',
+            batch=self.interface,
+            color=(255, 0, 0, 255)
+        )
         self.walls = list()
         self.direction = (0, 0)  # (dx, dy)
         self.speed = 120         # Pixels per second
         self.TILE_SIDE = 40
+        self.ghost_respawn_coord = [0, 0]
                 
     
     def canvas_init(self):
@@ -76,9 +87,11 @@ class SectorEight:
                                                     x=px, y=py, batch=self.interface)
                 self.food_dict[(self.coord_x, self.coord_y)] = self.food_sprite
             elif code == 'ghost':
-                ghost = pyglet.sprite.Sprite(img=pyglet.resource.image('images/ghost.gif'), 
+                self.ghost_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/ghost.gif'), 
                                             x=px, y=py, batch=self.interface)
-                self.ghost_dict[(self.coord_x, self.coord_y)] = ghost
+                self.ghost_respawn_coord[0] = self.ghost_sprite.x
+                self.ghost_respawn_coord[1] = self.ghost_sprite.y
+                
             elif code == 'eater':
                 self.eater_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/eater.gif'), 
                                                         x=px, y=py, batch=self.interface)
@@ -129,7 +142,25 @@ class SectorEight:
         else:
             self.laser_label.color = (237, 145, 33, 255)
             self.laser_label.text = "Laser Power: Unavailable"
-                    
+    
+    def redraw_ghost(self, dt):
+        self.ghost_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/ghost.gif'), 
+                                            x=self.ghost_respawn_coord[0], y=self.ghost_respawn_coord[1], batch=self.interface)
+        revive_path = self.confObj.toml_dict['music']['ghostReviveEffect']
+        self.play(music_file=revive_path)
+    def increase_speed(self):
+        self.speed = 240
+    def reset_speed(self, dt):
+        self.speed = 120
+    def xp_speed(self):
+        if self.xp_speedups >= 1:
+            self.increase_speed()
+            pyglet.clock.schedule_once(self.reset_speed, 30)
+            self.xp_speedups = self.xp_speedups - 1
+            self.xp_label.text =  f'XP Speedups: {self.xp_speedups}'
+        else:
+            self.xp_label.color = (237, 145, 33, 255)
+            self.xp_label.text = "XP Speedups: Unavailable"             
     def update(self, dt):
         if self.eater_sprite:
             # 1. Calculate the potential new position
@@ -176,14 +207,15 @@ class SectorEight:
                 chomp_path = self.confObj.toml_dict['music']['chompEffect']
                 self.play(music_file=chomp_path)
                 
-            if not self.laser_obj == None:
-                # Laser detection
-                if self.laser_obj.x >= self.eater_sprite.x and self.laser_obj.x <= self.eater_sprite.x + self.TILE_SIDE:
-                    for wall_obj in self.walls:
-                        if wall_obj.x == laser_obj.x:
-                            wall_obj = pyglet.sprite.Sprite(img=pyglet.resource.image('images/blacktile.gif'), \
-                                    x=wall_obj.x, y=wall_obj.y, batch=self.interface)
-    
+            if self.laser_obj is not None and self.ghost_sprite is not None:
+                # Check if the laser's Y-height is within the ghost's top and bottom bounds
+                laser_y = self.laser_obj.y
+                if self.ghost_sprite.y <= laser_y <= (self.ghost_sprite.y + self.ghost_sprite.height):
+                    # Hit detected!
+                    self.ghost_sprite.delete() # Properly remove the sprite from the batch
+                    self.ghost_sprite = None
+                    pyglet.clock.schedule_once(self.redraw_ghost, 30.5)
+                    
     def return_batch(self):
         return self.interface
        
