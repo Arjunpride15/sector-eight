@@ -8,6 +8,7 @@ import miniaudio
 import shelve
 from pyglet import shapes
 import threading
+import utilities
 class SectorEight:
     def __init__(self):
         # Basic stuff
@@ -23,10 +24,13 @@ class SectorEight:
         self.food_dict = {}
         self.eater_sprite = None
         self.food_sprite = None
+        self.magnet_dict = {}
+        self.magnet_sprite = None
         self.ghost_sprite = None
         self.music_switch = False
         self.walls = list()
         self.font_list = ['Cascadia Mono', 'Cascadia Code','Courier New']
+        self.grid_pos = None
         # Pellets!
         self.data_store = shelve.open('game_data')
         self.pellets = self.data_store.get('pellets', 0)
@@ -57,10 +61,10 @@ class SectorEight:
             f'XP Speedups: {self.xp_speedups}',
             font_name=self.font_list,
             font_size=18,
-            x=480, y=800,
+            x=450, y=800,
             anchor_x='left', anchor_y='bottom',
             batch=self.interface,
-            color=(255, 0, 0, 255)
+            color=(0, 130, 160, 255)
         )
         self.walls = list()
         self.direction = (0, 0)  # (dx, dy)
@@ -95,6 +99,10 @@ class SectorEight:
             elif code == 'eater':
                 self.eater_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/eater.gif'), 
                                                         x=px, y=py, batch=self.interface)
+            elif code == 'magnet':
+                self.magnet_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/magnet.gif'), 
+                                                    x=px, y=py, batch=self.interface)
+                self.magnet_dict[(self.coord_x, self.coord_y)] = self.magnet_sprite
             
             # Handle coordinate movement
             if code == 'newline':
@@ -141,7 +149,7 @@ class SectorEight:
             self.laser_label.text = f'Laser Power: {self.laser_powers}'
         else:
             self.laser_label.color = (237, 145, 33, 255)
-            self.laser_label.text = "Laser Power: Unavailable"
+            self.laser_label.text = "Laser Power: N/A"
     
     def redraw_ghost(self, dt):
         self.ghost_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/ghost.gif'), 
@@ -149,7 +157,7 @@ class SectorEight:
         revive_path = self.confObj.toml_dict['music']['ghostReviveEffect']
         self.play(music_file=revive_path)
     def increase_speed(self):
-        self.speed = 240
+        self.speed = self.speed + 120
     def reset_speed(self, dt):
         self.speed = 120
     def xp_speed(self):
@@ -158,9 +166,25 @@ class SectorEight:
             pyglet.clock.schedule_once(self.reset_speed, 30)
             self.xp_speedups = self.xp_speedups - 1
             self.xp_label.text =  f'XP Speedups: {self.xp_speedups}'
+            self.play(music_file=self.confObj.toml_dict['music']['xpSpeedUpEffect'])
         else:
             self.xp_label.color = (237, 145, 33, 255)
-            self.xp_label.text = "XP Speedups: Unavailable"             
+            self.xp_label.text = "XP Speedups: N/A"
+    def magnet(self):
+        for food_items in self.food_dict.items():
+            coords = food_items[0]
+            distance = utilities.coord_distance(coords[0], coords[1], self.eater_sprite.x, self.eater_sprite.y)
+            if distance <= 100:
+                self.food_dict[self.grid_pos].delete() 
+                del self.food_dict[self.grid_pos]      
+                
+                self.pellets += 1
+                self.pellet_label.text = f'Pellets: {self.pellets}'
+                
+                # Persistence
+                self.data_store['pellets'] = self.pellets
+                self.data_store.sync()
+                         
     def update(self, dt):
         if self.eater_sprite:
             # 1. Calculate the potential new position
@@ -179,6 +203,7 @@ class SectorEight:
                     new_y + padding < wall.y + wall.height and
                     new_y + self.eater_sprite.height - padding > wall.y):
                     collision = True
+                    
                     break
 
             # 3. Apply movement if clear
@@ -188,13 +213,13 @@ class SectorEight:
 
             # 4. Pellet Detection (Your original logic)
             # We use +20 to check the 'tile' the eater is mostly over
-            grid_pos = (int((self.eater_sprite.x + 20) // 40), 
+            self.grid_pos = (int((self.eater_sprite.x + 20) // 40), 
                         int((self.eater_sprite.y + 20) // 40))
             
-            if grid_pos in self.food_dict:
+            if self.grid_pos in self.food_dict:
                 # Remove pellet and update count
-                self.food_dict[grid_pos].delete() 
-                del self.food_dict[grid_pos]      
+                self.food_dict[self.grid_pos].delete() 
+                del self.food_dict[self.grid_pos]      
                 
                 self.pellets += 1
                 self.pellet_label.text = f'Pellets: {self.pellets}'
@@ -206,6 +231,10 @@ class SectorEight:
                 # Audio
                 chomp_path = self.confObj.toml_dict['music']['chompEffect']
                 self.play(music_file=chomp_path)
+            if self.grid_pos in self.magnet_dict:
+                self.magnet_dict[self.grid_pos].delete()
+                del self.magnet_dict[self.grid_pos]
+                self.magnet()
                 
             if self.laser_obj is not None and self.ghost_sprite is not None:
                 # Check if the laser's Y-height is within the ghost's top and bottom bounds

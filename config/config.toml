@@ -7,6 +7,7 @@ background = "audio/main-music.wav"
 chompEffect = "audio/chomp.wav"
 laserBeamEffect = "audio/laser.wav"
 ghostReviveEffect = "audio/ghost_revive.wav"
+xpSpeedUpEffect = "audio/xpwroom.wav"
 
 [data]
 MatrixRenderingFile = "data/ascii-art.txt"

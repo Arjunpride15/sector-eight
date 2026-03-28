@@ -10,6 +10,7 @@ def identify():
                 elif char == 'G': yield 'ghost'
                 elif char == 'E': yield 'food'
                 elif char == 'P': yield 'eater'
+                elif char == 'M': yield 'magnet'
                 elif char == ' ': yield 'blacktile'
             # Tell the canvas to reset X and increment Y
             yield 'newline'
