@@ -29,7 +29,7 @@ class SectorEight:
         self.ghost_sprite = None
         self.music_switch = False
         self.walls = list()
-        self.font_list = ['Cascadia Mono', 'Cascadia Code','Courier New']
+        self.font_list = self.confObj.toml_dict['font']['fontList']
         self.grid_pos = None
         # Pellets!
         self.data_store = shelve.open('game_data')
@@ -71,6 +71,9 @@ class SectorEight:
         self.speed = 120         # Pixels per second
         self.TILE_SIDE = 40
         self.ghost_respawn_coord = [0, 0]
+        self.magnet_active = False
+        self.magnet_timer = 0.0
+        self.bool_powerup = False
                 
     
     def canvas_init(self):
@@ -171,40 +174,67 @@ class SectorEight:
             self.xp_label.color = (237, 145, 33, 255)
             self.xp_label.text = "XP Speedups: N/A"
     def magnet(self):
-        for food_items in self.food_dict.items():
-            coords = food_items[0]
-            distance = utilities.coord_distance(coords[0], coords[1], self.eater_sprite.x, self.eater_sprite.y)
-            if distance <= 100:
-                self.food_dict[self.grid_pos].delete() 
-                del self.food_dict[self.grid_pos]      
+        # 1. Identify which pellets are within range
+        # We use a list to store keys because we cannot delete from the dict while iterating over it
+        to_remove = []
+        
+        # Define the pixel-based center of the player
+        player_x = self.eater_sprite.x
+        player_y = self.eater_sprite.y
+
+        for grid_coords, sprite in self.food_dict.items():
+            # Convert grid coordinates to pixels for an accurate distance check
+            # We multiply by TILE_SIDE (40) to match the sprite's position
+            pellet_pixel_x = grid_coords[0] * self.TILE_SIDE
+            pellet_pixel_y = grid_coords[1] * self.TILE_SIDE
+            
+            # Calculate distance using your utility function
+            distance = utilities.coord_distance(pellet_pixel_x, pellet_pixel_y, player_x, player_y)
+            
+            if distance <= 175:
+                to_remove.append(grid_coords)
+
+        # 2. Process the identified pellets
+        if to_remove:
+            for coords in to_remove:
+                # Properly delete the sprite from the Pyglet batch
+                self.food_dict[coords].delete()
+                # Remove from the dictionary
+                del self.food_dict[coords]
                 
+                # Increment pellet count
                 self.pellets += 1
-                self.pellet_label.text = f'Pellets: {self.pellets}'
-                
-                # Persistence
-                self.data_store['pellets'] = self.pellets
-                self.data_store.sync()
+            
+            # 3. Update UI and Persistence once after the loop for efficiency
+            self.pellet_label.text = f'Pellets: {self.pellets}'
+            self.data_store['pellets'] = self.pellets
+            self.data_store.sync()
+            
+            pickup_path = self.confObj.toml_dict['music']['magnetPickupEffect']
+            self.play(music_file=pickup_path)
+            
                          
     def update(self, dt):
+        collision = False
         if self.eater_sprite:
             # 1. Calculate the potential new position
             new_x = self.eater_sprite.x + (self.direction[0] * self.speed * dt)
             new_y = self.eater_sprite.y + (self.direction[1] * self.speed * dt)
-            
-            # 2. Collision Leeway (Hitbox Shrinking)
-            # We subtract a few pixels from the edges so the eater 'fits' better
-            padding = 6 
-            
-            collision = False
-            for wall in self.walls:
-                # Check overlap with padding applied to the eater's box
-                if (new_x + padding < wall.x + wall.width and
-                    new_x + self.eater_sprite.width - padding > wall.x and
-                    new_y + padding < wall.y + wall.height and
-                    new_y + self.eater_sprite.height - padding > wall.y):
-                    collision = True
-                    
-                    break
+            if not self.bool_powerup:
+                # 2. Collision Leeway (Hitbox Shrinking)
+                # We subtract a few pixels from the edges so the eater 'fits' better
+                padding = 6 
+                
+                collision = False
+                for wall in self.walls:
+                    # Check overlap with padding applied to the eater's box
+                    if (new_x + padding < wall.x + wall.width and
+                        new_x + self.eater_sprite.width - padding > wall.x and
+                        new_y + padding < wall.y + wall.height and
+                        new_y + self.eater_sprite.height - padding > wall.y):
+                        collision = True
+                        
+                        break
 
             # 3. Apply movement if clear
             if not collision:
@@ -231,10 +261,20 @@ class SectorEight:
                 # Audio
                 chomp_path = self.confObj.toml_dict['music']['chompEffect']
                 self.play(music_file=chomp_path)
+            
             if self.grid_pos in self.magnet_dict:
+                # Remove the magnet item from the map
                 self.magnet_dict[self.grid_pos].delete()
                 del self.magnet_dict[self.grid_pos]
-                self.magnet()
+                
+                # Activate the 60-second power-up
+                self.magnet_active = True
+                self.magnet_timer = 60.0 
+                
+                # Play a pickup sound
+                pickup_sound = self.confObj.toml_dict['music'].get('magicEffect')
+                if pickup_sound:
+                    self.play(music_file=pickup_sound)
                 
             if self.laser_obj is not None and self.ghost_sprite is not None:
                 # Check if the laser's Y-height is within the ghost's top and bottom bounds
@@ -244,6 +284,16 @@ class SectorEight:
                     self.ghost_sprite.delete() # Properly remove the sprite from the batch
                     self.ghost_sprite = None
                     pyglet.clock.schedule_once(self.redraw_ghost, 30.5)
+            if self.magnet_active:
+                self.magnet_timer -= dt
+                # Run the magnet suction logic every frame while active
+                self.magnet()
+                
+                # Check if time has run out
+                if self.magnet_timer <= 0:
+                    self.magnet_active = False
+                    self.magnet_timer = 0
+                    self.play(music_file=self.confObj.toml_dict['music']['magnetLosingEffect']) 
                     
     def return_batch(self):
         return self.interface

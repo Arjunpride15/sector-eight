@@ -8,6 +8,12 @@ chompEffect = "audio/chomp.wav"
 laserBeamEffect = "audio/laser.wav"
 ghostReviveEffect = "audio/ghost_revive.wav"
 xpSpeedUpEffect = "audio/xpwroom.wav"
+magnetPickupEffect = "audio/magnet-pickup.wav"
+magicEffect = "audio/special1.wav"
+magnetLosingEffect = "audio/magnet-losing.wav"
 
 [data]
 MatrixRenderingFile = "data/ascii-art.txt"
+
+[font]
+fontList = ['Cascadia Mono', 'Cascadia Code','Courier New'] # Font fallback sequence
