@@ -82,28 +82,28 @@ class SectorEight:
             px, py = self.coord_x * 40, self.coord_y * 40
             
             if code == 'wall':
-                s = pyglet.sprite.Sprite(img=pyglet.resource.image('images/tile.gif'), 
+                s = pyglet.sprite.Sprite(img=pyglet.resource.image('images/tile.png'), 
                                         x=px, y=py, batch=self.interface)
                 self.walls.append(s)
             elif code == 'blacktile':
-                s = pyglet.sprite.Sprite(img=pyglet.resource.image('images/blacktile.gif'), 
+                s = pyglet.sprite.Sprite(img=pyglet.resource.image('images/blacktile.png'), 
                                         x=px, y=py, batch=self.interface)
                 
             elif code == 'food':
-                self.food_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/pellet.gif'), 
+                self.food_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/pellet.png'), 
                                                     x=px, y=py, batch=self.interface)
                 self.food_dict[(self.coord_x, self.coord_y)] = self.food_sprite
             elif code == 'ghost':
-                self.ghost_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/ghost.gif'), 
+                self.ghost_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/ghost.png'), 
                                             x=px, y=py, batch=self.interface)
                 self.ghost_respawn_coord[0] = self.ghost_sprite.x
                 self.ghost_respawn_coord[1] = self.ghost_sprite.y
                 
             elif code == 'eater':
-                self.eater_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/eater.gif'), 
+                self.eater_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/eater.png'), 
                                                         x=px, y=py, batch=self.interface)
             elif code == 'magnet':
-                self.magnet_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/magnet.gif'), 
+                self.magnet_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/magnet.png'), 
                                                     x=px, y=py, batch=self.interface)
                 self.magnet_dict[(self.coord_x, self.coord_y)] = self.magnet_sprite
             
@@ -155,7 +155,7 @@ class SectorEight:
             self.laser_label.text = "Laser Power: N/A"
     
     def redraw_ghost(self, dt):
-        self.ghost_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/ghost.gif'), 
+        self.ghost_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/ghost.png'), 
                                             x=self.ghost_respawn_coord[0], y=self.ghost_respawn_coord[1], batch=self.interface)
         revive_path = self.confObj.toml_dict['music']['ghostReviveEffect']
         self.play(music_file=revive_path)
