@@ -50,7 +50,7 @@ class SectorEight:
             f'Laser Power: {self.laser_powers}',
             font_name=self.font_list,
             font_size=18,
-            x=200, y=800,
+            x=190 + self.pellet_label.x, y=800,
             anchor_x='left', anchor_y='bottom',
             batch=self.interface,
             color=(34, 139, 34, 255)# Forest green color
@@ -61,7 +61,7 @@ class SectorEight:
             f'XP Speedups: {self.xp_speedups}',
             font_name=self.font_list,
             font_size=18,
-            x=450, y=800,
+            x=210 + self.laser_label.x, y=800,
             anchor_x='left', anchor_y='bottom',
             batch=self.interface,
             color=(0, 130, 160, 255)
@@ -74,8 +74,17 @@ class SectorEight:
         self.magnet_active = False
         self.magnet_timer = 0.0
         self.bool_powerup = False
+        self.powerups = 10
+        self.powerup_label = pyglet.text.Label(
+            f'Powerups: {self.powerups}',
+            font_name=self.font_list,
+            font_size=18,
+            x=210 + self.xp_label.x, y=800,
+            anchor_x='left', anchor_y='bottom',
+            batch=self.interface,
+            color=(255, 182, 193)
+        )
                 
-    
     def canvas_init(self):
         
         for code in self.map_:
@@ -212,8 +221,23 @@ class SectorEight:
             
             pickup_path = self.confObj.toml_dict['music']['magnetPickupEffect']
             self.play(music_file=pickup_path)
+    def powerup_on(self):        
+        self.bool_powerup = True
+                     
+    def powerup_off(self, dt):
+        self.bool_powerup = False
+    def powerup(self):
+        if self.powerups >= 1:
+            self.powerup_on()
+            pyglet.clock.schedule_once(self.powerup_off, 0.6)
+            self.powerups = self.powerups - 1
+            self.powerup_label.text = f'Powerups: {self.powerups}'
+            self.play(music_file=self.confObj.toml_dict['music']['powerUpEffect'])
+        else:
             
-                         
+            self.powerup_label.color = (237, 145, 33, 255)
+            self.powerup_label.text = 'Powerups: N/A'         
+                     
     def update(self, dt):
         collision = False
         if self.eater_sprite:
@@ -301,5 +325,5 @@ class SectorEight:
     def start_(self):
         pyglet.clock.schedule_interval(self.update, 1/60.0)
         self.play_main_music_file(self)
-        # print(repr(self.walls))
+        
         pyglet.app.run()
