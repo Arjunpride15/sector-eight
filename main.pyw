@@ -65,6 +65,8 @@ def on_key_press(symbol, modifiers):
         se.xp_speed()
     elif symbol == key.RETURN:
         se.powerup()
+    elif symbol == key.LSHIFT or symbol == key.RSHIFT:
+        se.invisible_power()
 @window.event
 def on_key_release(symbol, modifiers):
     if symbol == key.SPACE:

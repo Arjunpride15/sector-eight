@@ -41,7 +41,7 @@ class SectorEight:
             x=20, y=800,
             anchor_x='left', anchor_y='bottom',
             batch=self.interface,
-            color=(255, 255, 0, 255) # Yellow/Gold color
+            color=(253, 189, 1, 255) # Yellow/Gold color
         
         )
         # Laser Stuff
@@ -53,7 +53,8 @@ class SectorEight:
             x=190 + self.pellet_label.x, y=800,
             anchor_x='left', anchor_y='bottom',
             batch=self.interface,
-            color=(34, 139, 34, 255)# Forest green color
+            color=(57, 255, 20, 255)
+            
         )
         self.laser_obj = None
         self.xp_speedups = 3
@@ -64,7 +65,7 @@ class SectorEight:
             x=210 + self.laser_label.x, y=800,
             anchor_x='left', anchor_y='bottom',
             batch=self.interface,
-            color=(0, 130, 160, 255)
+            color=(127, 235, 232, 255)
         )
         self.walls = list()
         self.direction = (0, 0)  # (dx, dy)
@@ -82,7 +83,18 @@ class SectorEight:
             x=210 + self.xp_label.x, y=800,
             anchor_x='left', anchor_y='bottom',
             batch=self.interface,
-            color=(255, 182, 193)
+            color=(254, 1, 154, 255)
+        )
+        self.invisibility = False
+        self.invisible_powers = 10
+        self.invisible_power_label = pyglet.text.Label(
+            f'Invisible Power: {self.invisible_powers}',
+            font_name=self.font_list,
+            font_size=18,
+            x=190 + self.powerup_label.x, y=800,
+            anchor_x='left', anchor_y='bottom',
+            batch=self.interface,
+            color=(138, 0, 255, 255)
         )
                 
     def canvas_init(self):
@@ -237,7 +249,25 @@ class SectorEight:
             
             self.powerup_label.color = (237, 145, 33, 255)
             self.powerup_label.text = 'Powerups: N/A'         
-                     
+     
+    def invisible_on(self):
+        self.eater_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/invisible-eater.png'), 
+                                                        x=self.eater_sprite.x, y=self.eater_sprite.y, batch=self.interface)
+        self.invisibility = True
+    def invisible_off(self, dt):
+        self.eater_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/eater.png'), 
+                                                        x=self.eater_sprite.x, y=self.eater_sprite.y, batch=self.interface)
+        self.invisibility = False
+    def invisible_power(self):
+        if self.invisible_powers >= 1:
+            self.invisible_on()
+            pyglet.clock.schedule_once(self.invisible_off, 45.0)
+            self.invisible_powers = self.invisible_powers - 1
+            self.invisible_power_label.text = f'Invisible Power: {self.invisible_powers}'
+            self.play(music_file=self.confObj.toml_dict['music']['invisibleEffect'])
+        else:
+            self.invisible_power_label.color =  (237, 145, 33, 255)
+            self.invisible_power_label.text = 'Invisible Power: N/A'               
     def update(self, dt):
         collision = False
         if self.eater_sprite:

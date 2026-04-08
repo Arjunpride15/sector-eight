@@ -12,6 +12,7 @@ magnetPickupEffect = "audio/magnet-pickup.wav"
 magicEffect = "audio/special1.wav"
 magnetLosingEffect = "audio/magnet-losing.wav"
 powerUpEffect =  "audio/chime.wav"
+invisibleEffect = "audio/invisible.wav"
 
 [data]
 MatrixRenderingFile = "data/ascii-art.txt"
