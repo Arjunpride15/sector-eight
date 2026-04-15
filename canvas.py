@@ -38,9 +38,11 @@ class SectorEight:
         self.walls = list()
         self.font_list = self.confObj.toml_dict['font']['fontList']
         self.grid_pos = None
+        self.ghost_grid_pos = None
         # Pellets!
         self.data_store = shelve.open('game_data')
         self.pellets = self.data_store.get('pellets', 0)
+        self.ghost_pellets = self.data_store.get('ghost_pellets', 0)
         self.pellet_label = pyglet.text.Label(
             f'Pellets: {self.pellets}',
             font_name=self.font_list,
@@ -53,6 +55,7 @@ class SectorEight:
         )
         # Laser Stuff
         self.laser_powers = 5
+        self.ghost_laser_powers = 5
         self.laser_label = pyglet.text.Label(
             f'Laser Power: {self.laser_powers}',
             font_name=self.font_list,
@@ -64,7 +67,9 @@ class SectorEight:
             
         )
         self.laser_obj = None
+        self.ghost_laser_obj = None
         self.xp_speedups = 3
+        self.ghost_xp_speedups = 3
         self.xp_label = pyglet.text.Label(
             f'XP Speedups: {self.xp_speedups}',
             font_name=self.font_list,
@@ -76,13 +81,19 @@ class SectorEight:
         )
         self.walls = list()
         self.direction = (0, 0)  # (dx, dy)
-        self.speed = 120         # Pixels per second
+        self.speed = 120 # Pixels per second
+        self.ghost_direction = (-1, 0)
+        self.ghost_speed = 120
         self.TILE_SIDE = 40
         self.ghost_respawn_coord = [0, 0]
         self.magnet_active = False
         self.magnet_timer = 0.0
+        self.ghost_magnet_active = False
+        self.ghost_magnet_timer = 0.0
         self.bool_powerup = False
+        self.ghost_bool_powerup = False
         self.powerups = 10
+        self.ghost_powerups = 10
         self.powerup_label = pyglet.text.Label(
             f'Powerups: {self.powerups}',
             font_name=self.font_list,
@@ -93,7 +104,9 @@ class SectorEight:
             color=(254, 1, 154, 255)
         )
         self.invisibility = False
+        self.ghost_invisibility = False
         self.invisible_powers = 10
+        self.ghost_invisible_powers = 10
         self.invisible_power_label = pyglet.text.Label(
             f'Invisible Power: {self.invisible_powers}',
             font_name=self.font_list,
@@ -103,6 +116,8 @@ class SectorEight:
             batch=self.interface,
             color=(138, 0, 255, 255)
         )
+        self.eater_respawn_x = 0
+        self.eater_respawn_y = 0
                 
     def canvas_init(self):
         
@@ -389,12 +404,237 @@ class SectorEight:
                     self.magnet_active = False
                     self.magnet_timer = 0
                     self.play(music_file=self.confObj.toml_dict['music']['magnetLosingEffect']) 
+
+    def ghost_laser(self):
+        if self.ghost_laser_powers >= 1:
+            self.ghost_laser_obj = shapes.Line(0, self.ghost_sprite.y + (self.TILE_SIDE / 2), 1600, \
+                                        self.ghost_sprite.y + (self.TILE_SIDE / 2), \
+                                        thickness=4, color=(240, 0, 25), batch=self.interface)
+            laser_path = self.confObj.toml_dict['music']['laserBeamEffect']
+            self.play(music_file=laser_path)
+            self.ghost_laser_obj.opacity = 150
+            self.ghost_laser_powers = self.ghost_laser_powers - 1
+            
+    
+    def redraw_eater(self, dt):
+        self.eater_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/eater.png'), 
+                                            x=self.eater_respawn_x, y=self.eater_respawn_y, batch=self.interface)
+        revive_path = self.confObj.toml_dict['music']['ghostReviveEffect']
+        self.play(music_file=revive_path)
+    def ghost_increase_speed(self):
+        self.ghost_speed = self.ghost_speed + 120
+    def ghost_reset_speed(self, dt):
+        self.ghost_speed = 120
+    def ghost_xp_speed(self):
+        if self.ghost_xp_speedups >= 1:
+            self.ghost_increase_speed()
+            pyglet.clock.schedule_once(self.ghost_reset_speed, 30)
+            self.ghost_xp_speedups = self.ghost_xp_speedups - 1
+            self.play(music_file=self.confObj.toml_dict['music']['xpSpeedUpEffect'])
+        
+    def ghost_magnet(self):
+        # 1. Identify which pellets are within range
+        # We use a list to store keys because we cannot delete from the dict while iterating over it
+        to_remove = []
+        
+       
+        ghost_x = self.ghost_sprite.x
+        ghost_y = self.ghost_sprite.y
+
+        for grid_coords, sprite in self.food_dict.items():
+            # Convert grid coordinates to pixels for an accurate distance check
+            # We multiply by TILE_SIDE (40) to match the sprite's position
+            pellet_pixel_x = grid_coords[0] * self.TILE_SIDE
+            pellet_pixel_y = grid_coords[1] * self.TILE_SIDE
+            
+            # Calculate distance using your utility function
+            distance = utilities.coord_distance(pellet_pixel_x, pellet_pixel_y, ghost_x, ghost_y)
+            
+            if distance <= 175:
+                to_remove.append(grid_coords)
+
+        # 2. Process the identified pellets
+        if to_remove:
+            for coords in to_remove:
+                # Properly delete the sprite from the Pyglet batch
+                self.food_dict[coords].delete()
+                # Remove from the dictionary
+                del self.food_dict[coords]
+                
+                # Increment pellet count
+                self.ghost_pellets += 1
+            
+            
+            self.data_store['ghost_pellets'] = self.ghost_pellets
+            self.data_store.sync()
+            
+            pickup_path = self.confObj.toml_dict['music']['magnetPickupEffect']
+            self.play(music_file=pickup_path)
+    def ghost_powerup_on(self):        
+        self.ghost_bool_powerup = True
+                     
+    def ghost_powerup_off(self, dt):
+        self.ghost_bool_powerup = False
+    def ghost_powerup(self):
+        if self.ghost_powerups >= 1:
+            self.ghost_powerup_on()
+            pyglet.clock.schedule_once(self.ghost_powerup_off, 0.6)
+            self.ghost_powerups = self.ghost_powerups - 1
+            self.play(music_file=self.confObj.toml_dict['music']['powerUpEffect'])
+                 
+     
+    def ghost_invisible_on(self):
+        self.ghost_sprite.opacity = 25
+        self.ghost_invisibility = True
+    def ghost_invisible_off(self, dt):
+        self.ghost_sprite.opacity = 255
+        self.ghost_invisibility = False
+    def ghost_invisible_power(self):
+        if self.ghost_invisible_powers >= 1:
+            self.ghost_invisible_on()
+            pyglet.clock.schedule_once(self.ghost_invisible_off, 45.0)
+            self.ghost_invisible_powers = self.ghost_invisible_powers - 1
+            
+            self.play(music_file=self.confObj.toml_dict['music']['invisibleEffect'])
+        
+                           
+    def ghost_update(self, dt):
+        collision = False
+        self.wanderer()
+        if self.ghost_sprite:
+            # 1. Calculate the potential new position
+            new_x = self.ghost_sprite.x + (self.ghost_direction[0] * self.ghost_speed * dt)
+            new_y = self.ghost_sprite.y + (self.ghost_direction[1] * self.ghost_speed * dt)
+            if not self.ghost_bool_powerup:
+                # 2. Collision Leeway (Hitbox Shrinking)
+                # We subtract a few pixels from the edges so the eater 'fits' better
+                padding = 6 
+                
+                collision = False
+                for wall in self.walls:
+                    # Check overlap with padding applied to the eater's box
+                    if (new_x + padding < wall.x + wall.width and
+                        new_x + self.ghost_sprite.width - padding > wall.x and
+                        new_y + padding < wall.y + wall.height and
+                        new_y + self.ghost_sprite.height - padding > wall.y):
+                        collision = True
+                        
+                        break
+
+            # 3. Apply movement if clear
+            if not collision:
+                self.ghost_sprite.x = new_x
+                self.ghost_sprite.y = new_y
+
+            # 4. Pellet Detection (Your original logic)
+            # We use +20 to check the 'tile' the eater is mostly over
+            self.ghost_grid_pos = (int((self.ghost_sprite.x + 20) // 40), 
+                        int((self.ghost_sprite.y + 20) // 40))
+            new_x = self.ghost_sprite.x + (self.ghost_direction[0] * self.ghost_speed * dt)
+            if self.ghost_grid_pos in self.food_dict:
+                # Remove pellet and update count
+                self.food_dict[self.ghost_grid_pos].delete() 
+                del self.food_dict[self.ghost_grid_pos]      
+                
+                self.ghost_pellets += 1
+                
+                
+                # Persistence
+                self.data_store['ghost_pellets'] = self.ghost_pellets
+                self.data_store.sync()
+                
+                # Audio
+                chomp_path = self.confObj.toml_dict['music']['chompEffect']
+                self.play(music_file=chomp_path)
+            
+            if self.ghost_grid_pos in self.magnet_dict:
+                # Remove the magnet item from the map
+                self.magnet_dict[self.ghost_grid_pos].delete()
+                del self.magnet_dict[self.ghost_grid_pos]
+                
+                # Activate the 60-second power-up
+                self.ghost_magnet_active = True
+                self.ghost_magnet_timer = 60.0 
+                
+                # Play a pickup sound
+                pickup_sound = self.confObj.toml_dict['music'].get('magicEffect')
+                if pickup_sound:
+                    self.play(music_file=pickup_sound)
+                
+            if self.ghost_laser_obj is not None and self.eater_sprite is not None:
+                
+                laser_y = self.ghost_laser_obj.y
+                if self.eater_sprite.y <= laser_y <= (self.eater_sprite.y + self.eater_sprite.height):
+                    self.eater_respawn_x = self.eater_sprite.x
+                    self.eater_respawn_y = self.eater_sprite.y
+                    # Hit detected!
+                    self.eater_sprite.delete() # Properly remove the sprite from the batch
+                    self.eater_sprite = None
+                    pyglet.clock.schedule_once(self.redraw_eater, 10)
+            if self.ghost_magnet_active:
+                self.ghost_magnet_timer -= dt
+                # Run the magnet suction logic every frame while active
+                self.ghost_magnet()
+                
+                # Check if time has run out
+                if self.ghost_magnet_timer <= 0:
+                    self.ghost_magnet_active = False
+                    self.ghost_magnet_timer = 0
+                    self.play(music_file=self.confObj.toml_dict['music']['magnetLosingEffect'])
+    def no_laser(self, dt):
+        self.ghost_laser_obj = None
+    def wanderer(self):
+        if self.ghost_sprite:
+            # 1. Wall Detection (Decision only)
+            # We look ahead to see if we are ABOUT to hit a wall
+            dx, dy = self.ghost_direction
+            predict_x = self.ghost_sprite.x + (dx * 5) 
+            predict_y = self.ghost_sprite.y + (dy * 5)
+            
+            hit_wall = False
+            for wall in self.walls:
+                if (predict_x < wall.x + wall.width and predict_x + 34 > wall.x and
+                    predict_y < wall.y + wall.height and predict_y + 34 > wall.y):
+                    hit_wall = True
+                    break
+                    
+            if hit_wall:
+                # Pick a new direction
+                self.ghost_direction = random.choice([(0, 1), (0, -1), (1, 0), (-1, 0)])
+            
+            # 2. Random Power Activation (Wanderer Specifics)
+            if not self.ghost_magnet_active and random.random() < 0.005: 
+                self.ghost_magnet_active = True
+                self.ghost_magnet_timer = 10.0 
+
+            # 3. Laser Logic (1-second delay check)
+            # We only schedule if the player is in sight AND a laser isn't already firing
+            if self.eater_sprite:
+                if self.ghost_laser_obj is None:
+                    if abs(self.ghost_sprite.y - self.eater_sprite.y) < 15:
+                        pyglet.clock.schedule_once(lambda dt: self.ghost_laser(), 1.0)
+                        pyglet.clock.schedule_once(self.no_laser, 1.5)
+                    
+    
+    def chaser(self):
+        pass
+    def ambusher(self):
+        pass
+    def timid(self):
+        pass
+    def change_personality(self, dt):
+        personalities = [self.wanderer, self.chaser, self.ambusher, self.timid]
+        random_personality = random.choice(personalities)
+        random_personality()
                     
     def return_batch(self):
         return self.interface
        
     def start_(self):
+        
         pyglet.clock.schedule_interval(self.update, 1/60.0)
+        pyglet.clock.schedule_interval(self.ghost_update, 1/60.0)
+        #pyglet.clock.schedule_interval(self.change_personality, 10.0)
         pyglet.clock.schedule_interval(self.blit_random_coin, 30)
         self.play_main_music_file(self)
         
