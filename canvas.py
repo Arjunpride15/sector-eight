@@ -9,6 +9,13 @@ import shelve
 from pyglet import shapes
 import threading
 import utilities
+import random
+from typing import NamedTuple
+
+class RandomPosition(NamedTuple):
+    xcoord: int
+    ycoord: int
+    
 class SectorEight:
     def __init__(self):
         # Basic stuff
@@ -267,7 +274,41 @@ class SectorEight:
             self.play(music_file=self.confObj.toml_dict['music']['invisibleEffect'])
         else:
             self.invisible_power_label.color =  (237, 145, 33, 255)
-            self.invisible_power_label.text = 'Invisible Power: N/A'               
+            self.invisible_power_label.text = 'Invisible Power: N/A'
+    def blit_random_coin(self, dt):
+        # 1. Generate a random GRID position
+        grid_x = random.randint(0, 39)
+        grid_y = random.randint(0, 19)
+        pixel_x = grid_x * self.TILE_SIDE
+        pixel_y = grid_y * self.TILE_SIDE
+
+        # 2. Check if this pixel position hits any wall
+        hit_wall = False
+        for wall_obj in self.walls:
+            if (pixel_x < wall_obj.x + wall_obj.width and
+                pixel_x + self.TILE_SIDE > wall_obj.x and
+                pixel_y < wall_obj.y + wall_obj.height and
+                pixel_y + self.TILE_SIDE > wall_obj.y):
+                hit_wall = True
+                break
+        
+        # 3. If it's a clear spot, spawn the coin
+        if not hit_wall:
+            new_coin = pyglet.sprite.Sprite(
+                img=pyglet.resource.image('images/pellet.png'), # or coin.png
+                x=pixel_x, 
+                y=pixel_y, 
+                batch=self.interface
+            )
+            
+            # USE GRID COORDINATES FOR THE DICTIONARY KEY
+            # This matches how self.grid_pos is calculated in update()
+            self.food_dict[(grid_x, grid_y)] = new_coin
+        
+                
+                
+            
+                       
     def update(self, dt):
         collision = False
         if self.eater_sprite:
@@ -354,6 +395,7 @@ class SectorEight:
        
     def start_(self):
         pyglet.clock.schedule_interval(self.update, 1/60.0)
+        pyglet.clock.schedule_interval(self.blit_random_coin, 30)
         self.play_main_music_file(self)
         
         pyglet.app.run()
