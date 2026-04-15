@@ -70,8 +70,9 @@ def on_key_press(symbol, modifiers):
             se.invisible_power()
 @window.event
 def on_key_release(symbol, modifiers):
-    if symbol == key.SPACE:
-        se.laser_obj = None
+    if se.eater_sprite:
+        if symbol == key.SPACE:
+            se.laser_obj = None
     
 
 
