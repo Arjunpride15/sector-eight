@@ -51,22 +51,23 @@ def on_close():
     
 @window.event
 def on_key_press(symbol, modifiers):
-    if symbol == key.UP or symbol == key.W:
-        se.direction = (0, 1)
-    elif symbol == key.DOWN or symbol == key.S:
-        se.direction = (0, -1)
-    elif symbol == key.LEFT or symbol == key.A:
-        se.direction = (-1, 0)
-    elif symbol == key.RIGHT or symbol == key.D:
-        se.direction = (1, 0)
-    elif symbol == key.SPACE:
-        se.laser()
-    elif symbol == key.TAB:
-        se.xp_speed()
-    elif symbol == key.RETURN:
-        se.powerup()
-    elif symbol == key.LSHIFT or symbol == key.RSHIFT:
-        se.invisible_power()
+    if se.eater_sprite:
+        if symbol == key.UP or symbol == key.W:
+            se.direction = (0, 1)
+        elif symbol == key.DOWN or symbol == key.S:
+            se.direction = (0, -1)
+        elif symbol == key.LEFT or symbol == key.A:
+            se.direction = (-1, 0)
+        elif symbol == key.RIGHT or symbol == key.D:
+            se.direction = (1, 0)
+        elif symbol == key.SPACE:
+            se.laser()
+        elif symbol == key.TAB:
+            se.xp_speed()
+        elif symbol == key.RETURN:
+            se.powerup()
+        elif symbol == key.LSHIFT or symbol == key.RSHIFT:
+            se.invisible_power()
 @window.event
 def on_key_release(symbol, modifiers):
     if symbol == key.SPACE:
