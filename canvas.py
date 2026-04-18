@@ -56,6 +56,7 @@ class SectorEight:
         # Laser Stuff
         self.laser_powers = 5
         self.ghost_laser_powers = 5
+        # it fires it 60 times.
         self.laser_label = pyglet.text.Label(
             f'Laser Power: {self.laser_powers}',
             font_name=self.font_list,
@@ -118,7 +119,7 @@ class SectorEight:
         )
         self.eater_respawn_x = 0
         self.eater_respawn_y = 0
-                
+        self.laser_detection = False        
     def canvas_init(self):
         
         for code in self.map_:
@@ -184,18 +185,19 @@ class SectorEight:
         self.__class__.play(self)
         
     def laser(self):
-        if self.laser_powers >= 1:
-            self.laser_obj = shapes.Line(0, self.eater_sprite.y + (self.TILE_SIDE / 2), 1600, \
-                                        self.eater_sprite.y + (self.TILE_SIDE / 2), \
-                                        thickness=4, color=(21, 234, 100), batch=self.interface)
-            laser_path = self.confObj.toml_dict['music']['laserBeamEffect']
-            self.play(music_file=laser_path)
-            self.laser_obj.opacity = 150
-            self.laser_powers = self.laser_powers - 1
-            self.laser_label.text = f'Laser Power: {self.laser_powers}'
-        else:
-            self.laser_label.color = (237, 145, 33, 255)
-            self.laser_label.text = "Laser Power: N/A"
+        if not self.ghost_invisibility:
+            if self.laser_powers >= 1 and self.eater_sprite:
+                self.laser_obj = shapes.Line(0, self.eater_sprite.y + (self.TILE_SIDE / 2), 1600, \
+                                            self.eater_sprite.y + (self.TILE_SIDE / 2), \
+                                            thickness=4, color=(21, 234, 100), batch=self.interface)
+                laser_path = self.confObj.toml_dict['music']['laserBeamEffect']
+                self.play(music_file=laser_path)
+                self.laser_obj.opacity = 150
+                self.laser_powers = self.laser_powers - 1
+                self.laser_label.text = f'Laser Power: {self.laser_powers}'
+            else:
+                self.laser_label.color = (237, 145, 33, 255)
+                self.laser_label.text = "Laser Power: N/A"
     
     def redraw_ghost(self, dt):
         self.ghost_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/ghost.png'), 
@@ -348,8 +350,8 @@ class SectorEight:
 
             # 3. Apply movement if clear
             if not collision:
-                self.eater_sprite.x = new_x
-                self.eater_sprite.y = new_y
+                self.eater_sprite.x = round(new_x)
+                self.eater_sprite.y = round(new_y)
 
             # 4. Pellet Detection (Your original logic)
             # We use +20 to check the 'tile' the eater is mostly over
@@ -406,14 +408,15 @@ class SectorEight:
                     self.play(music_file=self.confObj.toml_dict['music']['magnetLosingEffect']) 
 
     def ghost_laser(self):
-        if self.ghost_laser_powers >= 1:
-            self.ghost_laser_obj = shapes.Line(0, self.ghost_sprite.y + (self.TILE_SIDE / 2), 1600, \
-                                        self.ghost_sprite.y + (self.TILE_SIDE / 2), \
-                                        thickness=4, color=(240, 0, 25), batch=self.interface)
-            laser_path = self.confObj.toml_dict['music']['laserBeamEffect']
-            self.play(music_file=laser_path)
-            self.ghost_laser_obj.opacity = 150
-            self.ghost_laser_powers = self.ghost_laser_powers - 1
+        if not self.invisibility:
+            if self.ghost_laser_powers >= 1 and self.ghost_sprite is not None and self.eater_sprite is not None:
+                self.ghost_laser_obj = shapes.Line(0, self.ghost_sprite.y + (self.TILE_SIDE / 2), 1600, \
+                                            self.ghost_sprite.y + (self.TILE_SIDE / 2), \
+                                            thickness=4, color=(240, 0, 25), batch=self.interface)
+                laser_path = self.confObj.toml_dict['music']['laserBeamEffect']
+                self.play(music_file=laser_path)
+                self.ghost_laser_obj.opacity = 150
+                self.ghost_laser_powers = self.ghost_laser_powers - 1
             
     
     def redraw_eater(self, dt):
@@ -484,10 +487,10 @@ class SectorEight:
                  
      
     def ghost_invisible_on(self):
-        self.ghost_sprite.opacity = 25
+        self.ghost_sprite.opacity = 50
         self.ghost_invisibility = True
     def ghost_invisible_off(self, dt):
-        self.ghost_sprite.opacity = 255
+        self.ghost_sprite.opacity = 50
         self.ghost_invisibility = False
     def ghost_invisible_power(self):
         if self.ghost_invisible_powers >= 1:
@@ -500,7 +503,7 @@ class SectorEight:
                            
     def ghost_update(self, dt):
         collision = False
-        self.wanderer()
+        #self.wanderer()
         if self.ghost_sprite:
             # 1. Calculate the potential new position
             new_x = self.ghost_sprite.x + (self.ghost_direction[0] * self.ghost_speed * dt)
@@ -523,8 +526,8 @@ class SectorEight:
 
             # 3. Apply movement if clear
             if not collision:
-                self.ghost_sprite.x = new_x
-                self.ghost_sprite.y = new_y
+                self.ghost_sprite.x = round(new_x)
+                self.ghost_sprite.y = round(new_y)
 
             # 4. Pellet Detection (Your original logic)
             # We use +20 to check the 'tile' the eater is mostly over
@@ -583,7 +586,9 @@ class SectorEight:
                     self.play(music_file=self.confObj.toml_dict['music']['magnetLosingEffect'])
     def no_laser(self, dt):
         self.ghost_laser_obj = None
-    def wanderer(self):
+    def reset_detection(self, dt):
+        self.laser_detection = False
+    def wanderer(self, dt):
         if self.ghost_sprite:
             # 1. Wall Detection (Decision only)
             # We look ahead to see if we are ABOUT to hit a wall
@@ -612,29 +617,131 @@ class SectorEight:
             if self.eater_sprite:
                 if self.ghost_laser_obj is None:
                     if abs(self.ghost_sprite.y - self.eater_sprite.y) < 15:
-                        pyglet.clock.schedule_once(lambda dt: self.ghost_laser(), 1.0)
-                        pyglet.clock.schedule_once(self.no_laser, 1.5)
+                        if not self.invisibility:
+                            self.laser_detection = True
+                            pyglet.clock.schedule_once(self.reset_detection, 0.55)
                     
     
-    def chaser(self):
-        pass
-    def ambusher(self):
-        pass
-    def timid(self):
-        pass
+    def chaser(self, dt):
+        if self.ghost_sprite and self.eater_sprite:
+            # 1. Use a Deadzone to prevent oscillation
+            # Only change direction if the distance is greater than 5 pixels
+            diff_x = self.eater_sprite.x - self.ghost_sprite.x
+            diff_y = self.eater_sprite.y - self.ghost_sprite.y
+            deadzone = 5
+
+            if abs(diff_x) > deadzone:
+                self.ghost_direction = (1, 0) if diff_x > 0 else (-1, 0)
+            elif abs(diff_y) > deadzone:
+                self.ghost_direction = (0, 1) if diff_y > 0 else (0, -1)
+
+            # 2. XP Speedup Usage
+            # Chasers use speedups when far away to catch the eater
+            dist = utilities.coord_distance(
+                self.ghost_sprite.x, self.ghost_sprite.y, 
+                self.eater_sprite.x, self.eater_sprite.y
+            )
+            
+            if dist > 300 and self.ghost_xp_speedups >= 1:
+                # Ghost doubles its speed for 30 seconds
+                self.ghost_xp_speed()
+
+            # 3. Aggressive Sniping
+            # Detection triggers the 1-second delay logic
+            if abs(self.ghost_sprite.y - self.eater_sprite.y) < 15:
+                # The self.invisibility check allows the eater to 'sneak'
+                if not self.invisibility:
+                    self.laser_detection = True
+    def ambusher(self, dt):
+        if self.ghost_sprite and self.eater_sprite:
+            # 1. Distance check for tactical positioning
+            dist_to_player = utilities.coord_distance(
+                self.ghost_sprite.x, self.ghost_sprite.y, 
+                self.eater_sprite.x, self.eater_sprite.y
+            )
+
+            # 2. Hiding Behavior: If far away, stop and vanish 
+            if dist_to_player > 400:
+                self.ghost_direction = (0, 0) # Stop in a 'box'
+                if not self.ghost_invisibility and self.ghost_invisible_powers >= 1:
+                    self.ghost_invisible_power()
+            else:
+                # 3. Sudden Strike: If player approaches, activate movement 
+                if self.ghost_direction == (0, 0):
+                    self.ghost_direction = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
+                
+                # Use Powerups to surprise the player 
+                if not self.ghost_bool_powerup and self.ghost_powerups >= 1:
+                    self.ghost_powerup()
+
+            # 4. Sudden Laser Detection 
+            # Ambusher has a slightly wider detection window for 'sudden' firing
+            if abs(self.ghost_sprite.y - self.eater_sprite.y) < 20:
+                if not self.invisibility: # Keeping your stealth mechanic 
+                    self.laser_detection = True
+    def timid(self, dt):
+        if self.ghost_sprite and self.eater_sprite:
+            # 1. Calculate distance to the player
+            player_dist = utilities.coord_distance(
+                self.ghost_sprite.x, self.ghost_sprite.y, 
+                self.eater_sprite.x, self.eater_sprite.y
+            )
+
+            # 2. Shy Reaction: If player is within 250 pixels, run away
+            if player_dist < 250:
+                # Trigger invisibility to 'hide' while fleeing
+                if not self.ghost_invisibility and self.ghost_invisible_powers >= 1:
+                    self.ghost_invisible_power()
+
+                # Determine flee direction based on player's relative position
+                if abs(self.eater_sprite.x - self.ghost_sprite.x) > abs(self.eater_sprite.y - self.ghost_sprite.y):
+                    # Player is further away horizontally, so flee horizontally
+                    self.ghost_direction = (1, 0) if self.eater_sprite.x < self.ghost_sprite.x else (-1, 0)
+                else:
+                    # Player is further away vertically, so flee vertically
+                    self.ghost_direction = (0, 1) if self.eater_sprite.y < self.ghost_sprite.y else (0, -1)
+                    
+            else:
+                # 3. If safe, try to 'hide' in a corner or stop moving
+                if random.random() < 0.01: 
+                    self.ghost_direction = (0, 0) # Stop and hide
+                elif self.ghost_direction == (0, 0) and random.random() < 0.05:
+                    # Occasionally start moving again to find a new hiding spot
+                    self.ghost_direction = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
+            if self.eater_sprite:
+                    if self.ghost_laser_obj is None:
+                        if abs(self.ghost_sprite.y - self.eater_sprite.y) < 15:
+                            if not self.invisibility:
+                                self.laser_detection = True
+                
     def change_personality(self, dt):
-        personalities = [self.wanderer, self.chaser, self.ambusher, self.timid]
+        self.laser_detection = False
+        personalities = [self.wanderer, 
+                         self.timid, 
+                         self.chaser, 
+                         self.ambusher
+                         ]
+        for item in personalities:
+            try:
+                pyglet.clock.unschedule(item)
+            except Exception:
+                continue
         random_personality = random.choice(personalities)
-        random_personality()
+        pyglet.clock.schedule_interval(random_personality, 1/60)
+    def fire_laser(self, dt):
+        if self.laser_detection:
+            pyglet.clock.schedule_once(lambda dt: self.ghost_laser(), 1.0)
+            pyglet.clock.schedule_once(self.no_laser, 1.5)
                     
     def return_batch(self):
         return self.interface
        
     def start_(self):
-        
+        self.change_personality(1)
         pyglet.clock.schedule_interval(self.update, 1/60.0)
         pyglet.clock.schedule_interval(self.ghost_update, 1/60.0)
-        #pyglet.clock.schedule_interval(self.change_personality, 10.0)
+        pyglet.clock.schedule_interval(self.fire_laser, 2.0)
+        pyglet.clock.schedule_interval(self.change_personality, 30.0)
         pyglet.clock.schedule_interval(self.blit_random_coin, 30)
         self.play_main_music_file(self)
         
