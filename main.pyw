@@ -24,7 +24,7 @@ import time
 window = pyglet.window.Window(width=1600,height=850,caption="Sector 8")
 
 
-se = canvas.SectorEight()
+se = canvas.SectorEight(window)
     
 
 

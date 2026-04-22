@@ -17,8 +17,9 @@ class RandomPosition(NamedTuple):
     ycoord: int
     
 class SectorEight:
-    def __init__(self):
+    def __init__(self, window):
         # Basic stuff
+        self.WINDOW = window
         self.map_ = grid.identify()
         self.coord_x = 0
         self.coord_y = 0
@@ -44,7 +45,7 @@ class SectorEight:
         self.pellets = self.data_store.get('pellets', 0)
         self.ghost_pellets = self.data_store.get('ghost_pellets', 0)
         self.pellet_label = pyglet.text.Label(
-            f'Pellets: {self.pellets}',
+            f'Pellets: {self.pellets:,}',
             font_name=self.font_list,
             font_size=18,
             x=20, y=800,
@@ -119,7 +120,24 @@ class SectorEight:
         )
         self.eater_respawn_x = 0
         self.eater_respawn_y = 0
-        self.laser_detection = False        
+        self.laser_detection = False
+        self.game_paused = False
+        self.eater_lives = 4
+        self.ghost_lives = 4
+        self.heart_symbol = "\u2764"
+        self.lives_display = self.heart_symbol * self.eater_lives
+        self.life_label = pyglet.text.Label(
+            f'{self.lives_display}',
+            font_name=self.font_list,
+            font_size=18,
+            x=300 + self.invisible_power_label.x, y=800,
+            anchor_x='left', anchor_y='bottom',
+            batch=self.interface,
+            color=(255, 0, 102, 255)
+        )
+        self.update_clock = None
+        self.ghost_update_clock = None
+              
     def canvas_init(self):
         
         for code in self.map_:
@@ -158,6 +176,9 @@ class SectorEight:
             else:
                 # Increment X for EVERYTHING that isn't a newline
                 self.coord_x += 1
+        self.translucent_layer = pyglet.shapes.Rectangle(x=0, y=0, width=self.WINDOW.width, height=self.WINDOW.height, \
+                                                         color=(0, 0, 0),batch=self.interface)
+        self.translucent_layer.opacity = 0 
     
                         
     def play(self, **kwargs):
@@ -328,6 +349,8 @@ class SectorEight:
                        
     def update(self, dt):
         collision = False
+        self.lives_display = self.heart_symbol * self.eater_lives
+        self.life_label.text = f"{self.lives_display}"
         if self.eater_sprite:
             # 1. Calculate the potential new position
             new_x = self.eater_sprite.x + (self.direction[0] * self.speed * dt)
@@ -395,6 +418,7 @@ class SectorEight:
                     # Hit detected!
                     self.ghost_sprite.delete() # Properly remove the sprite from the batch
                     self.ghost_sprite = None
+                    self.ghost_lives = self.ghost_lives - 1
                     pyglet.clock.schedule_once(self.redraw_ghost, 30.5)
             if self.magnet_active:
                 self.magnet_timer -= dt
@@ -417,6 +441,7 @@ class SectorEight:
                 self.play(music_file=laser_path)
                 self.ghost_laser_obj.opacity = 150
                 self.ghost_laser_powers = self.ghost_laser_powers - 1
+                
             
     
     def redraw_eater(self, dt):
@@ -573,6 +598,7 @@ class SectorEight:
                     # Hit detected!
                     self.eater_sprite.delete() # Properly remove the sprite from the batch
                     self.eater_sprite = None
+                    self.eater_lives = self.eater_lives - 1
                     pyglet.clock.schedule_once(self.redraw_eater, 10)
             if self.ghost_magnet_active:
                 self.ghost_magnet_timer -= dt
@@ -652,6 +678,8 @@ class SectorEight:
                 # The self.invisibility check allows the eater to 'sneak'
                 if not self.invisibility:
                     self.laser_detection = True
+                    pyglet.clock.schedule_once(self.reset_detection, 0.55)
+                    
     def ambusher(self, dt):
         if self.ghost_sprite and self.eater_sprite:
             # 1. Distance check for tactical positioning
@@ -679,6 +707,7 @@ class SectorEight:
             if abs(self.ghost_sprite.y - self.eater_sprite.y) < 20:
                 if not self.invisibility: # Keeping your stealth mechanic 
                     self.laser_detection = True
+                    pyglet.clock.schedule_once(self.reset_detection, 0.55)
     def timid(self, dt):
         if self.ghost_sprite and self.eater_sprite:
             # 1. Calculate distance to the player
@@ -713,6 +742,7 @@ class SectorEight:
                         if abs(self.ghost_sprite.y - self.eater_sprite.y) < 15:
                             if not self.invisibility:
                                 self.laser_detection = True
+                                pyglet.clock.schedule_once(self.reset_detection, 0.55)
                 
     def change_personality(self, dt):
         self.laser_detection = False
@@ -732,9 +762,39 @@ class SectorEight:
         if self.laser_detection:
             pyglet.clock.schedule_once(lambda dt: self.ghost_laser(), 1.0)
             pyglet.clock.schedule_once(self.no_laser, 1.5)
+            
                     
     def return_batch(self):
         return self.interface
+    def you_won(self):
+        self.win_sprite = pyglet.sprite.Sprite(
+        img=pyglet.resource.image('images/you-won.png'),
+        x=112, 
+        y=200, 
+        batch=self.interface
+        )
+        self.win_sprite.opacity = 200
+        self.stop_music()
+    def you_lost(self):
+        self.lost_sprite = pyglet.sprite.Sprite(pyglet.resource.image('images/you-lost.png'),
+                                                x=112, \
+                                                y=200, \
+                                                batch=self.interface)
+        self.lost_sprite.opacity = 200
+        
+        self.stop_music()
+        
+    def check_state(self, dt):
+        if self.ghost_lives == 0 or self.food_dict == {}:
+            self.you_won()
+            self.translucent_layer.opacity = 128
+            pyglet.clock.unschedule(self.update)
+            pyglet.clock.unschedule(self.ghost_update)            
+        elif self.eater_lives == 0:
+            self.you_lost()
+            self.translucent_layer.opacity = 128
+            pyglet.clock.unschedule(self.update)
+            pyglet.clock.unschedule(self.ghost_update)
        
     def start_(self):
         self.change_personality(1)
@@ -743,6 +803,7 @@ class SectorEight:
         pyglet.clock.schedule_interval(self.fire_laser, 2.0)
         pyglet.clock.schedule_interval(self.change_personality, 30.0)
         pyglet.clock.schedule_interval(self.blit_random_coin, 30)
+        pyglet.clock.schedule_interval(self.check_state, 1/60)
         self.play_main_music_file(self)
         
         pyglet.app.run()
