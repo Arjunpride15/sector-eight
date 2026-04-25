@@ -29,8 +29,7 @@ se = canvas.SectorEight(window)
 
 
 se.canvas_init()
-pyglet.clock.schedule_interval(se.play_main_music_file, 43)
-    
+pyglet.clock.schedule_interval(se.play_main_music_file, 43)  
 @window.event
 def on_draw():
     
@@ -73,7 +72,10 @@ def on_key_release(symbol, modifiers):
     if se.eater_sprite:
         if symbol == key.SPACE:
             se.laser_obj = None
-    
+@window.event
+def on_mouse_press(x, y, button, modifiers):
+    if not se.game_active and se.restart_button.is_clicked(x, y):
+        se.restart_game()    
 
 
    

@@ -4,6 +4,8 @@ LicensePath = "LICENSE"
 
 [music]
 background = "audio/main-music.wav"
+victory = "audio/victory.wav"
+lose = "audio/losing.wav"
 chompEffect = "audio/chomp.wav"
 laserBeamEffect = "audio/laser.wav"
 ghostReviveEffect = "audio/ghost_revive.wav"

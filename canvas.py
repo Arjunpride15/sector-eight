@@ -44,43 +44,13 @@ class SectorEight:
         self.data_store = shelve.open('game_data')
         self.pellets = self.data_store.get('pellets', 0)
         self.ghost_pellets = self.data_store.get('ghost_pellets', 0)
-        self.pellet_label = pyglet.text.Label(
-            f'Pellets: {self.pellets:,}',
-            font_name=self.font_list,
-            font_size=18,
-            x=20, y=800,
-            anchor_x='left', anchor_y='bottom',
-            batch=self.interface,
-            color=(253, 189, 1, 255) # Yellow/Gold color
-        
-        )
         # Laser Stuff
         self.laser_powers = 5
         self.ghost_laser_powers = 5
-        # it fires it 60 times.
-        self.laser_label = pyglet.text.Label(
-            f'Laser Power: {self.laser_powers}',
-            font_name=self.font_list,
-            font_size=18,
-            x=190 + self.pellet_label.x, y=800,
-            anchor_x='left', anchor_y='bottom',
-            batch=self.interface,
-            color=(57, 255, 20, 255)
-            
-        )
         self.laser_obj = None
         self.ghost_laser_obj = None
         self.xp_speedups = 3
         self.ghost_xp_speedups = 3
-        self.xp_label = pyglet.text.Label(
-            f'XP Speedups: {self.xp_speedups}',
-            font_name=self.font_list,
-            font_size=18,
-            x=210 + self.laser_label.x, y=800,
-            anchor_x='left', anchor_y='bottom',
-            batch=self.interface,
-            color=(127, 235, 232, 255)
-        )
         self.walls = list()
         self.direction = (0, 0)  # (dx, dy)
         self.speed = 120 # Pixels per second
@@ -96,47 +66,22 @@ class SectorEight:
         self.ghost_bool_powerup = False
         self.powerups = 10
         self.ghost_powerups = 10
-        self.powerup_label = pyglet.text.Label(
-            f'Powerups: {self.powerups}',
-            font_name=self.font_list,
-            font_size=18,
-            x=210 + self.xp_label.x, y=800,
-            anchor_x='left', anchor_y='bottom',
-            batch=self.interface,
-            color=(254, 1, 154, 255)
-        )
         self.invisibility = False
         self.ghost_invisibility = False
         self.invisible_powers = 10
         self.ghost_invisible_powers = 10
-        self.invisible_power_label = pyglet.text.Label(
-            f'Invisible Power: {self.invisible_powers}',
-            font_name=self.font_list,
-            font_size=18,
-            x=190 + self.powerup_label.x, y=800,
-            anchor_x='left', anchor_y='bottom',
-            batch=self.interface,
-            color=(138, 0, 255, 255)
-        )
         self.eater_respawn_x = 0
         self.eater_respawn_y = 0
         self.laser_detection = False
-        self.game_paused = False
+        self.game_active = True
         self.eater_lives = 4
         self.ghost_lives = 4
         self.heart_symbol = "\u2764"
         self.lives_display = self.heart_symbol * self.eater_lives
-        self.life_label = pyglet.text.Label(
-            f'{self.lives_display}',
-            font_name=self.font_list,
-            font_size=18,
-            x=300 + self.invisible_power_label.x, y=800,
-            anchor_x='left', anchor_y='bottom',
-            batch=self.interface,
-            color=(255, 0, 102, 255)
-        )
-        self.update_clock = None
-        self.ghost_update_clock = None
+        self.game_over_music_playing = False
+        self.lost = False
+        self.restart_button = None
+        
               
     def canvas_init(self):
         
@@ -179,7 +124,17 @@ class SectorEight:
         self.translucent_layer = pyglet.shapes.Rectangle(x=0, y=0, width=self.WINDOW.width, height=self.WINDOW.height, \
                                                          color=(0, 0, 0),batch=self.interface)
         self.translucent_layer.opacity = 0 
-    
+        # HUD Labels initialized once to prevent stacking
+        self.pellet_label = pyglet.text.Label('', font_name=self.font_list, font_size=18, x=20, y=800, batch=self.interface, color=(253, 189, 1, 255))
+        self.laser_label = pyglet.text.Label('', font_name=self.font_list, font_size=18, x=210, y=800, batch=self.interface, color=(57, 255, 20, 255))
+        self.xp_label = pyglet.text.Label('', font_name=self.font_list, font_size=18, x=420, y=800, batch=self.interface, color=(127, 235, 232, 255))
+        self.powerup_label = pyglet.text.Label('', font_name=self.font_list, font_size=18, x=630, y=800, batch=self.interface, color=(254, 1, 154, 255))
+        self.invisible_power_label = pyglet.text.Label('', font_name=self.font_list, font_size=18, x=820, y=800, batch=self.interface, color=(138, 0, 255, 255))
+        self.life_label = pyglet.text.Label('', font_name=self.font_list, font_size=18, x=1120, y=800, batch=self.interface, color=(255, 0, 102, 255))
+
+        self.translucent_layer = pyglet.shapes.Rectangle(x=0, y=0, width=self.WINDOW.width, height=self.WINDOW.height, 
+                                                         color=(0, 0, 0), batch=self.interface)
+        self.translucent_layer.opacity = 0
                         
     def play(self, **kwargs):
         try:
@@ -342,15 +297,22 @@ class SectorEight:
             # USE GRID COORDINATES FOR THE DICTIONARY KEY
             # This matches how self.grid_pos is calculated in update()
             self.food_dict[(grid_x, grid_y)] = new_coin
-        
+    def update_labels(self):
+        # Update text of existing labels
+        self.pellet_label.text = f'Pellets: {self.pellets:,}'
+        self.laser_label.text = f'Laser Power: {self.laser_powers}'
+        self.xp_label.text = f'XP Speedups: {self.xp_speedups}'
+        self.powerup_label.text = f'Powerups: {self.powerups}'
+        self.invisible_power_label.text = f'Invisible Power: {self.invisible_powers}'
+        self.life_label.text = self.heart_symbol * self.eater_lives   
                 
                 
             
                        
     def update(self, dt):
         collision = False
-        self.lives_display = self.heart_symbol * self.eater_lives
-        self.life_label.text = f"{self.lives_display}"
+        self.update_labels()
+        
         if self.eater_sprite:
             # 1. Calculate the potential new position
             new_x = self.eater_sprite.x + (self.direction[0] * self.speed * dt)
@@ -767,36 +729,54 @@ class SectorEight:
     def return_batch(self):
         return self.interface
     def you_won(self):
-        self.win_sprite = pyglet.sprite.Sprite(
-        img=pyglet.resource.image('images/you-won.png'),
-        x=112, 
-        y=200, 
-        batch=self.interface
-        )
-        self.win_sprite.opacity = 200
-        self.stop_music()
+        if not self.game_over_music_playing:
+            self.game_over_music_playing = True
+            self.stop_music()
+            winsound.PlaySound(self.confObj.toml_dict['music']['victory'], winsound.SND_FILENAME | winsound.SND_LOOP | winsound.SND_ASYNC)
+            
+            self.win_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/you-won.png'), x=112, y=200, batch=self.interface)
+            self.win_sprite.opacity = 255
+            self.restart_button = utilities.Button('Restart', (self.WINDOW.width // 2) - (75), 100, 150, 50, self.interface, (57, 20, 255, 200))
+
     def you_lost(self):
-        self.lost_sprite = pyglet.sprite.Sprite(pyglet.resource.image('images/you-lost.png'),
-                                                x=112, \
-                                                y=200, \
-                                                batch=self.interface)
-        self.lost_sprite.opacity = 200
-        
-        self.stop_music()
-        
+        if not self.game_over_music_playing:
+            self.game_over_music_playing = True
+            self.stop_music()
+            winsound.PlaySound(self.confObj.toml_dict['music']['lose'], winsound.SND_FILENAME | winsound.SND_LOOP | winsound.SND_ASYNC)
+            
+            self.lost_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/you-lost.png'), x=112, y=200, batch=self.interface)
+            self.lost_sprite.opacity = 255
+            self.restart_button = utilities.Button('Restart', (self.WINDOW.width // 2) - (75), 100, 150, 50, self.interface, (57, 20, 255, 200))
     def check_state(self, dt):
-        if self.ghost_lives == 0 or self.food_dict == {}:
+        if not self.game_active:
+            return
+
+        if self.ghost_lives == 0 or (self.food_dict == {} and self.pellets > self.ghost_pellets):
+            self.game_active = False
+            self.game_paused = True
             self.you_won()
-            self.translucent_layer.opacity = 128
-            pyglet.clock.unschedule(self.update)
-            pyglet.clock.unschedule(self.ghost_update)            
+            self.translucent_layer.opacity = 100
+            self.translucent_layer.color = (57, 255, 20) # Green
+
+        elif self.eater_lives == 1:
+            self.translucent_layer.opacity = 60
+            self.translucent_layer.color = (237, 145, 33) # Orange
+
         elif self.eater_lives == 0:
+            self.game_active = False
+            self.game_paused = True
             self.you_lost()
             self.translucent_layer.opacity = 128
-            pyglet.clock.unschedule(self.update)
-            pyglet.clock.unschedule(self.ghost_update)
-       
+            self.translucent_layer.color = (255, 20, 60) # Red
+    def restart_game(self):
+        print('button clicked')
     def start_(self):
+        # Enable Blending for transparency
+        import pyglet.gl as gl
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
+        self.canvas_init()
         self.change_personality(1)
         pyglet.clock.schedule_interval(self.update, 1/60.0)
         pyglet.clock.schedule_interval(self.ghost_update, 1/60.0)
@@ -805,5 +785,4 @@ class SectorEight:
         pyglet.clock.schedule_interval(self.blit_random_coin, 30)
         pyglet.clock.schedule_interval(self.check_state, 1/60)
         self.play_main_music_file(self)
-        
         pyglet.app.run()
