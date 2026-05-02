@@ -21,3 +21,4 @@ MatrixRenderingFile = "data/ascii-art.txt"
 
 [font]
 fontList = ['Cascadia Mono', 'Cascadia Code','Courier New'] # Font fallback sequence
+emojiFont = "Segoe UI Emoji"

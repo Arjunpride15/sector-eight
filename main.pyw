@@ -75,7 +75,15 @@ def on_key_release(symbol, modifiers):
 @window.event
 def on_mouse_press(x, y, button, modifiers):
     if not se.game_active and se.restart_button.is_clicked(x, y):
-        se.restart_game()    
+        se.restart_game()
+    elif not se.game_active and se.home_button.is_clicked(x, y):
+        se.open_home()
+    elif not se.game_active and se.shop_button.is_clicked(x, y):
+        se.open_shop()
+    elif not se.game_active and se.restart_emoji_button.is_clicked(x, y):
+        se.restart_game()
+    elif not se.game_active and se.query_button.is_clicked(x, y):
+        se.open_query()    
 
 
    

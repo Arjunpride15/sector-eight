@@ -2,6 +2,6 @@
 /__pycache__/*.pyc
 *.pyc
 test_algo.py
-game_data
-game_data-shm
-game_data-wal
+data/game_data
+data/game_data-shm
+data/game_data-wal

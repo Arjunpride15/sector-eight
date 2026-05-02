@@ -11,7 +11,10 @@ import threading
 import utilities
 import random
 from typing import NamedTuple
+from subprocess import Popen
 
+class NotImplementedWarning(Warning):
+    pass
 class RandomPosition(NamedTuple):
     xcoord: int
     ycoord: int
@@ -38,10 +41,11 @@ class SectorEight:
         self.music_switch = False
         self.walls = list()
         self.font_list = self.confObj.toml_dict['font']['fontList']
+        self.emoji_font = self.confObj.toml_dict['font']['emojiFont']
         self.grid_pos = None
         self.ghost_grid_pos = None
         # Pellets!
-        self.data_store = shelve.open('game_data')
+        self.data_store = shelve.open('data\\game_data')
         self.pellets = self.data_store.get('pellets', 0)
         self.ghost_pellets = self.data_store.get('ghost_pellets', 0)
         # Laser Stuff
@@ -81,6 +85,10 @@ class SectorEight:
         self.game_over_music_playing = False
         self.lost = False
         self.restart_button = None
+        self.home_button = None
+        self.shop_button = None
+        self.query_button = None
+        self.restart_emoji_button = None
         
               
     def canvas_init(self):
@@ -724,7 +732,17 @@ class SectorEight:
         if self.laser_detection:
             pyglet.clock.schedule_once(lambda dt: self.ghost_laser(), 1.0)
             pyglet.clock.schedule_once(self.no_laser, 1.5)
-            
+    def make_option_buttons(self) -> None:
+        self.restart_button = utilities.Button('Restart', (self.WINDOW.width // 2) - (75), 
+                                               100, 150, 50, self.interface, (57, 20, 255, 200))
+        self.home_button = utilities.Button('\U0001f3e1', 10, 730, 40, 40, 
+                                            self.interface, (78, 205, 196), 20, self.emoji_font)
+        self.shop_button = utilities.Button('\U0001f6d2', 110, 730, 40, 40, 
+                                            self.interface, (255, 107, 107), 20, self.emoji_font)
+        self.restart_emoji_button = utilities.Button('\U0001f504', 1450, 730, 40, 40,
+                                                     self.interface, (90, 150, 255), 20, self.emoji_font)
+        self.query_button = utilities.Button('\u2754', 1550, 730, 40, 40,
+                                             self.interface, (255, 230, 109), 20, self.emoji_font)       
                     
     def return_batch(self):
         return self.interface
@@ -734,9 +752,9 @@ class SectorEight:
             self.stop_music()
             winsound.PlaySound(self.confObj.toml_dict['music']['victory'], winsound.SND_FILENAME | winsound.SND_LOOP | winsound.SND_ASYNC)
             
-            self.win_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/you-won.png'), x=112, y=200, batch=self.interface)
+            self.win_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/you-won.png'), x=175, y=200, batch=self.interface)
             self.win_sprite.opacity = 255
-            self.restart_button = utilities.Button('Restart', (self.WINDOW.width // 2) - (75), 100, 150, 50, self.interface, (57, 20, 255, 200))
+            self.make_option_buttons()
 
     def you_lost(self):
         if not self.game_over_music_playing:
@@ -744,9 +762,9 @@ class SectorEight:
             self.stop_music()
             winsound.PlaySound(self.confObj.toml_dict['music']['lose'], winsound.SND_FILENAME | winsound.SND_LOOP | winsound.SND_ASYNC)
             
-            self.lost_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/you-lost.png'), x=112, y=200, batch=self.interface)
+            self.lost_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('images/you-lost.png'), x=175, y=200, batch=self.interface)
             self.lost_sprite.opacity = 255
-            self.restart_button = utilities.Button('Restart', (self.WINDOW.width // 2) - (75), 100, 150, 50, self.interface, (57, 20, 255, 200))
+            self.make_option_buttons()
     def check_state(self, dt):
         if not self.game_active:
             return
@@ -769,7 +787,14 @@ class SectorEight:
             self.translucent_layer.opacity = 128
             self.translucent_layer.color = (255, 20, 60) # Red
     def restart_game(self):
-        print('button clicked')
+        self.data_store.close()
+        Popen(["restart.cmd"])
+    def open_home(self):
+        raise NotImplementedWarning('Home Button Clicked')
+    def open_shop(self):
+        raise NotImplementedWarning('Store Button Clicked')
+    def open_query(self):
+        raise NotImplementedWarning('Query Button Clicked')
     def start_(self):
         # Enable Blending for transparency
         import pyglet.gl as gl
