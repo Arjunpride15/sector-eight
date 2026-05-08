@@ -792,7 +792,7 @@ class SectorEight:
     def open_home(self):
         raise NotImplementedWarning('Home Button Clicked')
     def open_shop(self):
-        raise NotImplementedWarning('Store Button Clicked')
+        Popen(["shop_launch.cmd"])
     def open_query(self):
         raise NotImplementedWarning('Query Button Clicked')
     def start_(self):

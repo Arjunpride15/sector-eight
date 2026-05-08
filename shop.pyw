@@ -7,7 +7,7 @@ import shop_backend
 window = pyglet.window.Window(width=1600,height=850,caption="Shop | Sector 8")
 
 #                     (r, g, b, a)
-pyglet.gl.glClearColor(0.5, 0.5, 0.5, 1)
+pyglet.gl.glClearColor(0.2, 0.2, 0.35, 1)
 
 shop_instance = shop_backend.SectorEightShop(window)
 shop_instance.init_window()
@@ -20,18 +20,28 @@ def on_draw():
     
 @window.event
 def on_mouse_scroll(x, y, scroll_x, scroll_y):
-    for sprite in shop_instance.interface_objects:
-        if scroll_y > 0:
-            sprite.x += 10
-        elif scroll_y < 0:
-            sprite.x -= 10
+    # Calculate intended move
+    move = 20 if scroll_y < 0 else -20
+    
+    # Check if the NEW offset would be in bounds
+    if shop_instance.max_scroll >= (shop_instance.offset_x + move) >= shop_instance.min_scroll:
+        shop_instance.offset_x += move
+        for sprite in shop_instance.scroll_objects:
+            sprite.x += move
+
 @window.event
 def on_key_press(symbol, modifiers):
-    for sprite in shop_instance.interface_objects:
-        if symbol == key.LEFT:
-            sprite.x -= 50
-        if symbol == key.RIGHT:
-            sprite.x += 50
+    move = 0
+    if symbol == key.LEFT:
+        move = 50
+    elif symbol == key.RIGHT:
+        move = -50
+        
+    if move != 0:
+        if shop_instance.max_scroll >= (shop_instance.offset_x + move) >= shop_instance.min_scroll:
+            shop_instance.offset_x += move
+            for sprite in shop_instance.scroll_objects:
+                sprite.x += move
         
 @window.event
 def on_close():
