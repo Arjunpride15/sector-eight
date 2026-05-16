@@ -575,7 +575,7 @@ class SectorEight:
                     # Hit detected!
                     self.eater_sprite.delete() # Properly remove the sprite from the batch
                     self.eater_sprite = None
-                    if not self.extra_lives == 0:
+                    if self.extra_lives > 0:
                         self.extra_lives -= 1
                         self.sync_data('extra_lives', self.extra_lives)
                     else:
