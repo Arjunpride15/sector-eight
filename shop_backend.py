@@ -9,7 +9,7 @@ from canvas import NotImplementedWarning
 from typing import NamedTuple
 import random
 import tastyerrors
-
+import datetime
 
 class ShopItem(NamedTuple):
     item_name: str
@@ -24,17 +24,34 @@ class SectorEightShop:
         self.interface = pyglet.graphics.Batch()
         self.configObj = conf.Config()
         self.data_storage = shelve.open('data\\game_data')
+        self.log_file = shelve.open(r"data\purchases")
+        self.laser_powers = self.data_storage.get('laser', 5)
+        self.xp_speedups = self.data_storage.get('xp', 3)
+        self.powerups = self.data_storage.get('powerups', 10)
+        self.invisible_powers = self.data_storage.get('invisiblity', 7)
+        self.extra_lives = self.data_storage.get('extra_lives', 0)
+        self.log = self.log_file.get("log", list())
+        self.log_str = ''
         self.music_switch = False
         self.pellets = self.data_storage.get('pellets', 0)
         self.font_list = self.configObj.toml_dict['font']['fontList']
         self.emoji_font = self.configObj.toml_dict['font']['emojiFont']
         self.heading_font = 'Segoe UI'
         self.picks_list = ['TOP PICKS FOR YOU', 'RECOMMENDED', 'SUGGESTED', 'OFTEN BOUGHT']
+        self.info_label = pyglet.text.Label('Shop | Sector Eight',
+                                            font_name="Open Sans",
+                                            weight="light",
+                                            font_size=70,
+                                            x=11,
+                                            y=580,
+                                            batch=self.interface,
+                                            color=(230, 230, 230, 230, 255))
         self.pellet_label = pyglet.text.Label(f'Pellets: {self.pellets}', 
                                               font_name=self.font_list, 
-                                              font_size=18, 
+                                              font_size=20,
+                                              stretch="expanded" ,
                                               x=20, 
-                                              y=800, 
+                                              y=780, 
                                               batch=self.interface, 
                                               color=(253, 189, 1, 255))
         self.picks_label = pyglet.text.Label(random.choice(self.picks_list), 
@@ -47,7 +64,21 @@ class SectorEightShop:
                                               batch=self.interface,
                                                
                                               color=(30, 189, 225, 255))
-        self.product_names = ["Laser Boost", "XP Speedups", "Powerups", "Invisibiity", "Extra Life"]
+        self.transaction_id = 0
+        self.id_label = pyglet.text.Label(f"Latest Transaction ID: {self.transaction_id}",
+                                          font_name=self.font_list,
+                                          font_size=20,
+                                          stretch="expanded",
+                                          x=250,
+                                          y=780,
+                                          batch=self.interface,
+                                          color=(4, 217, 255, 255))
+        self.product_names = {"Laser Boost": self.laser_powers, 
+                              "XP Speedups": self.xp_speedups, 
+                              "Powerups": self.powerups, 
+                              "Invisibiity": self.invisible_powers, 
+                              "Extra Life": self.extra_lives,
+                              }
         self.available_items = [
             ShopItem('Laser Boost', 25, "\U0001f52b", (57, 255, 20, 255)),
             ShopItem('XP Speedups', 50, "\u26a1", (127, 235, 232, 255)),
@@ -72,6 +103,9 @@ class SectorEightShop:
         self.max_scroll = 0     # The starting left boundary
         self.badge_list: list[utilities.Badge] = list()
         
+    def sync_data(self, name, var):
+        self.data_storage[name] = var
+        self.data_storage.sync()    
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
             self.scroll_objects.append(element)
@@ -79,7 +113,8 @@ class SectorEightShop:
             for item in element:
                 self.scroll_objects.append(item)
         else:
-            raise tastyerrors.BadType(f'''Invalid argument("element") passed to shop_backend.SectorEightShop.add_scrollist; argument passed was {element}''')
+            raise tastyerrors.BadType(f'''Invalid argument("element") passed to shop_backend.SectorEightShop.add_scrollist; 
+                                      argument passed was {element}''')
         
     def init_window(self):
         
@@ -106,11 +141,48 @@ class SectorEightShop:
                              self.ruler,
                              self.vr1])
         self.add_scrolllist(self.badge_list)
+    
+    def generate_id(self, digits: int) -> int:
+        purchase_id = str()
+        for _ in range(digits):
+            purchase_id = purchase_id + str(random.randint(0, 9))
+        return int(purchase_id) 
+    
+    def log_buy(self, trans_id, name_item):
+        self.log_str = f"{str(datetime.datetime.now())};{name_item};{trans_id}"
+        self.log.append(self.log_str)
+        self.log_file['log'] = self.log
+        self.log_file.sync()        
     def buy(self, item):
-        if not item in self.product_names:
+        if not item in self.product_names.keys():
             raise tastyerrors.ProcessingError(f"Invalid product passed to buy ({item})")
             return
-        
+        self.transaction_id = self.generate_id(12)
+        for index, prod in enumerate(self.available_items):
+            if item == prod.item_name:
+                break
+        if self.pellets > 0 or self.pellets > self.available_items[index].item_price:
+            self.pellets -= self.available_items[index].item_price
+            self.pellet_label.text = f"Pellets: {self.pellets}"
+            self.sync_data('pellets', self.pellets)
+        else:
+            raise tastyerrors.InsufficientFundsError(f"Sufficient pellets aren't available to buy {item}")
+        if item == "Laser Boost":
+            self.laser_powers += 1
+            self.sync_data("laser", self.laser_powers)
+        elif item == "XP Speedups":
+            self.xp_speedups += 1
+            self.sync_data('xp', self.xp_speedups)
+        elif item == "Powerups":
+            self.powerups += 1
+            self.sync_data('powerups', self.powerups)
+        elif item == "Invisibility":
+            self.invisible_powers += 1
+            self.sync_data('invisibility', self.invisible_powers)
+        elif item == "Extra Life":
+            self.extra_lives += 1
+            self.sync_data('extra_lives', self.extra_lives)
+        self.log_buy(self.transaction_id, item)
         
     def play(self, **kwargs):
         try:
@@ -133,8 +205,14 @@ class SectorEightShop:
     def update(self, dt):
         for obj in self.scroll_objects:
             if hasattr(obj, 'update'):
-                obj.update(dt)       
-    
+                obj.update(dt)
+        self.id_label.text = f"Latest Transaction ID: {self.transaction_id}"
+        self.product_names = {"Laser Boost": self.laser_powers, 
+                              "XP Speedups": self.xp_speedups, 
+                              "Powerups": self.powerups, 
+                              "Invisibiity": self.invisible_powers, 
+                              "Extra Life": self.extra_lives,
+                              }
     def start(self):
         self.play()
         pyglet.clock.schedule_interval(self.update, 1/60.0)

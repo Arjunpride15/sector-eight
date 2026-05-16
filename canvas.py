@@ -49,11 +49,11 @@ class SectorEight:
         self.pellets = self.data_store.get('pellets', 0)
         self.ghost_pellets = self.data_store.get('ghost_pellets', 0)
         # Laser Stuff
-        self.laser_powers = 5
+        self.laser_powers = self.data_store.get('laser', 5)
         self.ghost_laser_powers = 5
         self.laser_obj = None
         self.ghost_laser_obj = None
-        self.xp_speedups = 3
+        self.xp_speedups = self.data_store.get('xp', 3)
         self.ghost_xp_speedups = 3
         self.walls = list()
         self.direction = (0, 0)  # (dx, dy)
@@ -68,17 +68,18 @@ class SectorEight:
         self.ghost_magnet_timer = 0.0
         self.bool_powerup = False
         self.ghost_bool_powerup = False
-        self.powerups = 10
+        self.powerups = self.data_store.get('powerups', 10)
         self.ghost_powerups = 10
         self.invisibility = False
         self.ghost_invisibility = False
-        self.invisible_powers = 10
-        self.ghost_invisible_powers = 10
+        self.invisible_powers = self.data_store.get('invisiblity', 7)
+        self.ghost_invisible_powers = 7
         self.eater_respawn_x = 0
         self.eater_respawn_y = 0
         self.laser_detection = False
         self.game_active = True
-        self.eater_lives = 4
+        self.extra_lives = self.data_store.get('extra_lives', 0)
+        self.eater_lives = 4 + self.extra_lives
         self.ghost_lives = 4
         self.heart_symbol = "\u2764"
         self.lives_display = self.heart_symbol * self.eater_lives
@@ -168,6 +169,9 @@ class SectorEight:
         
         self.__class__.play(self)
         
+    def sync_data(self, name, var):
+        self.data_store[name] = var
+        self.data_store.sync()     
     def laser(self):
         if not self.ghost_invisibility:
             if self.laser_powers >= 1 and self.eater_sprite:
@@ -179,6 +183,7 @@ class SectorEight:
                 self.laser_obj.opacity = 150
                 self.laser_powers = self.laser_powers - 1
                 self.laser_label.text = f'Laser Power: {self.laser_powers}'
+                self.sync_data('laser', self.laser_powers)
             else:
                 self.laser_label.color = (237, 145, 33, 255)
                 self.laser_label.text = "Laser Power: N/A"
@@ -199,6 +204,7 @@ class SectorEight:
             self.xp_speedups = self.xp_speedups - 1
             self.xp_label.text =  f'XP Speedups: {self.xp_speedups}'
             self.play(music_file=self.confObj.toml_dict['music']['xpSpeedUpEffect'])
+            self.sync_data('xp', self.xp_speedups)
         else:
             self.xp_label.color = (237, 145, 33, 255)
             self.xp_label.text = "XP Speedups: N/A"
@@ -253,6 +259,7 @@ class SectorEight:
             self.powerups = self.powerups - 1
             self.powerup_label.text = f'Powerups: {self.powerups}'
             self.play(music_file=self.confObj.toml_dict['music']['powerUpEffect'])
+            self.sync_data('powerups', self.powerups)
         else:
             
             self.powerup_label.color = (237, 145, 33, 255)
@@ -273,6 +280,7 @@ class SectorEight:
             self.invisible_powers = self.invisible_powers - 1
             self.invisible_power_label.text = f'Invisible Power: {self.invisible_powers}'
             self.play(music_file=self.confObj.toml_dict['music']['invisibleEffect'])
+            self.sync_data('invisibility', self.invisible_powers)
         else:
             self.invisible_power_label.color =  (237, 145, 33, 255)
             self.invisible_power_label.text = 'Invisible Power: N/A'
@@ -314,13 +322,12 @@ class SectorEight:
         self.invisible_power_label.text = f'Invisible Power: {self.invisible_powers}'
         self.life_label.text = self.heart_symbol * self.eater_lives   
                 
-                
-            
-                       
+          
+                                   
     def update(self, dt):
         collision = False
         self.update_labels()
-        
+        self.eater_lives = 4 + self.extra_lives
         if self.eater_sprite:
             # 1. Calculate the potential new position
             new_x = self.eater_sprite.x + (self.direction[0] * self.speed * dt)
@@ -568,7 +575,11 @@ class SectorEight:
                     # Hit detected!
                     self.eater_sprite.delete() # Properly remove the sprite from the batch
                     self.eater_sprite = None
-                    self.eater_lives = self.eater_lives - 1
+                    if not self.extra_lives == 0:
+                        self.extra_lives -= 1
+                        self.sync_data('extra_lives', self.extra_lives)
+                    else:
+                        self.eater_lives -= 1
                     pyglet.clock.schedule_once(self.redraw_eater, 10)
             if self.ghost_magnet_active:
                 self.ghost_magnet_timer -= dt
