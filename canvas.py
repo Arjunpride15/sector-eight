@@ -79,10 +79,11 @@ class SectorEight:
         self.laser_detection = False
         self.game_active = True
         self.extra_lives = self.data_store.get('extra_lives', 0)
-        self.eater_lives = 4 + self.extra_lives
+        self.eater_lives = 4
+        self.user_display_lives = self.eater_lives + self.extra_lives
         self.ghost_lives = 4
         self.heart_symbol = "\u2764"
-        self.lives_display = self.heart_symbol * self.eater_lives
+        self.lives_display = self.heart_symbol * self.user_display_lives
         self.game_over_music_playing = False
         self.lost = False
         self.restart_button = None
@@ -320,14 +321,14 @@ class SectorEight:
         self.xp_label.text = f'XP Speedups: {self.xp_speedups}'
         self.powerup_label.text = f'Powerups: {self.powerups}'
         self.invisible_power_label.text = f'Invisible Power: {self.invisible_powers}'
-        self.life_label.text = self.heart_symbol * self.eater_lives   
+        self.life_label.text = self.heart_symbol * self.user_display_lives   
                 
           
                                    
     def update(self, dt):
         collision = False
         self.update_labels()
-        self.eater_lives = 4 + self.extra_lives
+        self.user_display_lives = self.eater_lives + self.extra_lives
         if self.eater_sprite:
             # 1. Calculate the potential new position
             new_x = self.eater_sprite.x + (self.direction[0] * self.speed * dt)

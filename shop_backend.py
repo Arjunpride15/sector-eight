@@ -10,6 +10,7 @@ from typing import NamedTuple
 import random
 import tastyerrors
 import datetime
+from recommendations import SectorEightRecommendations
 
 class ShopItem(NamedTuple):
     item_name: str
@@ -23,6 +24,10 @@ class SectorEightShop:
         self.scroll_objects = list()
         self.interface = pyglet.graphics.Batch()
         self.configObj = conf.Config()
+        self.rec_obj = SectorEightRecommendations()
+        self.rec_badge = None
+        pyglet.options['search_local_libs'] = True
+        pyglet.font.add_file('fonts/MerriweatherSans-Light.ttf')
         self.data_storage = shelve.open('data\\game_data')
         self.log_file = shelve.open(r"data\purchases")
         self.laser_powers = self.data_storage.get('laser', 5)
@@ -39,7 +44,7 @@ class SectorEightShop:
         self.heading_font = 'Segoe UI'
         self.picks_list = ['TOP PICKS FOR YOU', 'RECOMMENDED', 'SUGGESTED', 'OFTEN BOUGHT']
         self.info_label = pyglet.text.Label('Shop | Sector Eight',
-                                            font_name="Open Sans",
+                                            font_name="Merriweather Sans",
                                             weight="light",
                                             font_size=70,
                                             x=11,
@@ -62,8 +67,8 @@ class SectorEightShop:
                                               x=10, 
                                               y=430, 
                                               batch=self.interface,
-                                               
                                               color=(30, 189, 225, 255))
+        
         self.transaction_id = 0
         self.id_label = pyglet.text.Label(f"Latest Transaction ID: {self.transaction_id}",
                                           font_name=self.font_list,
@@ -97,7 +102,18 @@ class SectorEightShop:
                                             thickness=2.0, color=(30, 189, 200, 200), batch=self.interface)
             self.vruler_list.append(vruler)
         self.vr1 = self.vruler_list[1]
-        self.vr1.x = self.vr1.x2 = 1_500
+        self.vr1.x = self.vr1.x2 = 1_100
+        self.product_label = pyglet.text.Label(
+            text="PRODUCTS",
+            font_name=self.heading_font,
+            font_size=20,
+            weight="ultrabold",
+            stretch="expanded",
+            x=self.vr1.x,
+            y=430,
+            batch=self.interface,
+            color=(30, 189, 225, 255)
+        )
         self.offset_x = 0
         self.min_scroll = -20000 # How far right the shop goes
         self.max_scroll = 0     # The starting left boundary
@@ -116,31 +132,7 @@ class SectorEightShop:
             raise tastyerrors.BadType(f'''Invalid argument("element") passed to shop_backend.SectorEightShop.add_scrollist; 
                                       argument passed was {element}''')
         
-    def init_window(self):
-        
-        self.ruler = pyglet.shapes.Line(-10, self.ruler_y,  self.ruler_x + 100_000, self.ruler_y,
-                                        thickness = 2.0, color = (30, 189, 200, 200), batch=self.interface)
-        for i, item in enumerate(self.available_items):
-            if i == 0:
-                item_badge = utilities.Badge(
-                    self.vr1.x + 20,
-                    0, 800, self.ruler_y, item.bg_color, (150, 200, 150, 225), (200, 200, 200), (0, 0, 0, 225),
-                    item.item_name, item.item_esc_char, f"Buy for {item.item_price}P", bob=True, batch=self.interface
-                )
-                self.badge_list.append(item_badge)
-            elif i != 0:
-                item_badge = utilities.Badge(
-                    self.badge_list[i - 1].x + 900,
-                    0, 800, self.ruler_y, item.bg_color, (150, 200, 150, 225), (200, 200, 200), (0, 0, 0, 225),
-                    item.item_name, item.item_esc_char, f"Buy for {item.item_price}P", bob=True, batch=self.interface
-                )
-                self.badge_list.append(item_badge)
-        
-        
-        self.add_scrolllist([self.picks_label,
-                             self.ruler,
-                             self.vr1])
-        self.add_scrolllist(self.badge_list)
+
     
     def generate_id(self, digits: int) -> int:
         purchase_id = str()
@@ -149,7 +141,7 @@ class SectorEightShop:
         return int(purchase_id) 
     
     def log_buy(self, trans_id, name_item):
-        self.log_str = f"{str(datetime.datetime.now())};{name_item};{trans_id}"
+        self.log_str = f"{str(datetime.datetime.now())} {name_item} {trans_id}"
         self.log.append(self.log_str)
         self.log_file['log'] = self.log
         self.log_file.sync()        
@@ -184,6 +176,49 @@ class SectorEightShop:
             self.sync_data('extra_lives', self.extra_lives)
         self.log_buy(self.transaction_id, item)
         
+    def make_recommended_item(self):
+        suggested_item = self.rec_obj.get_recommended_item()
+        for item in self.available_items:
+            if suggested_item == item.item_name:
+                break
+        discount = random.randint(1, item.item_price - 1)
+            
+        self.rec_badge = utilities.Badge(
+            x=20, y=0,
+            width=1000, height=self.ruler_y, bg_color=item.bg_color, 
+            btn_color=(150, 200, 150, 225), emoji_color=(200, 200, 200), main_text_color=(0, 0, 0, 225),
+            main_text=item.item_name, emoji="\U0001F4AF", 
+            btn_text=f"Offer: Buy now for {item.item_price - discount}P", bob=True, batch=self.interface
+            
+        )
+    def init_window(self):
+        
+        self.ruler = pyglet.shapes.Line(-10, self.ruler_y,  self.ruler_x + 100_000, self.ruler_y,
+                                        thickness = 2.0, color = (30, 189, 200, 200), batch=self.interface)
+        self.make_recommended_item()
+        for i, item in enumerate(self.available_items):
+            if i == 0:
+                item_badge = utilities.Badge(
+                    self.vr1.x + 20,
+                    0, 800, self.ruler_y, item.bg_color, (150, 200, 150, 225), (200, 200, 200), (0, 0, 0, 225),
+                    item.item_name, item.item_esc_char, f"Buy for {item.item_price}P", bob=True, batch=self.interface
+                )
+                self.badge_list.append(item_badge)
+            elif i != 0:
+                item_badge = utilities.Badge(
+                    self.badge_list[i - 1].x + 900,
+                    0, 800, self.ruler_y, item.bg_color, (150, 200, 150, 225), (200, 200, 200), (0, 0, 0, 225),
+                    item.item_name, item.item_esc_char, f"Buy for {item.item_price}P", bob=True, batch=self.interface
+                )
+                self.badge_list.append(item_badge)
+        
+        
+        self.add_scrolllist([self.picks_label,
+                             self.ruler,
+                             self.vr1,
+                             self.product_label])
+        self.add_scrolllist(self.badge_list)
+        self.add_scrolllist(self.rec_badge)    
     def play(self, **kwargs):
         try:
             if not kwargs:

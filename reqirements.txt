@@ -15,4 +15,3 @@ wheel==0.45.1
 playsound==1.2.2
 tomli==2.4.0
 miniaudio-1.61
-dill

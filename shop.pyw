@@ -35,7 +35,7 @@ def on_mouse_press(x, y, button, modifiers):
         for badge in shop_instance.badge_list:
             # Check if the mouse click is within the badge's button boundaries
             if badge.is_clicked(x, y):
-                print(f"Purchasing: {badge.title.text}")
+                #print(f"Purchasing: {badge.title.text}")
                 shop_instance.buy(badge.title.text)
 @window.event
 def on_key_press(symbol, modifiers):
