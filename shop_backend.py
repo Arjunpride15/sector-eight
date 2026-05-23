@@ -74,7 +74,7 @@ class SectorEightShop:
                                           font_name=self.font_list,
                                           font_size=20,
                                           stretch="expanded",
-                                          x=250,
+                                          x=self.pellet_label.x + 230,
                                           y=780,
                                           batch=self.interface,
                                           color=(4, 217, 255, 255))
@@ -115,13 +115,36 @@ class SectorEightShop:
             color=(30, 189, 225, 255)
         )
         self.offset_x = 0
-        self.min_scroll = -20000 # How far right the shop goes
+        self.min_scroll = -10000 # How far right the shop goes
         self.max_scroll = 0     # The starting left boundary
         self.badge_list: list[utilities.Badge] = list()
-        
+        self.item_discount = 0
+        self.home_button = None
+        self.game_button = None
+        self.query_button = None
     def sync_data(self, name, var):
         self.data_storage[name] = var
-        self.data_storage.sync()    
+        self.data_storage.sync()
+        
+    def play(self, **kwargs):
+        try:
+            if not kwargs:
+                if not self.music_switch:
+                    winsound.PlaySound(self.configObj.toml_dict['music']['shopBackground'], 
+                                       winsound.SND_FILENAME | winsound.SND_LOOP | winsound.SND_ASYNC)
+                                       
+            else:
+                # For custom music files passed via kwargs
+                device = miniaudio.PlaybackDevice()
+                stream = miniaudio.stream_file(kwargs['music_file'])
+                device.start(stream)
+        except KeyError:
+            return 'KeyError Encountered'
+            
+    def stop_music(self):
+        winsound.PlaySound(None, winsound.SND_FILENAME)
+        self.music_switch = False
+           
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
             self.scroll_objects.append(element)
@@ -141,23 +164,27 @@ class SectorEightShop:
         return int(purchase_id) 
     
     def log_buy(self, trans_id, name_item):
-        self.log_str = f"{str(datetime.datetime.now())} {name_item} {trans_id}"
+        self.log_str = f"{str(datetime.datetime.now())} | {name_item} | {trans_id}"
         self.log.append(self.log_str)
         self.log_file['log'] = self.log
         self.log_file.sync()        
-    def buy(self, item):
+    def buy(self, item, discount=0):
         if not item in self.product_names.keys():
             raise tastyerrors.ProcessingError(f"Invalid product passed to buy ({item})")
             return
-        self.transaction_id = self.generate_id(12)
         for index, prod in enumerate(self.available_items):
             if item == prod.item_name:
                 break
-        if self.pellets > 0 or self.pellets > self.available_items[index].item_price:
-            self.pellets -= self.available_items[index].item_price
+        # Note: The index and prod variables are available to use even after the loop finishes.
+        # This approach that we have followed is very performance-centic and lightweight!
+        if self.pellets > 0 or self.pellets >= self.available_items[index].item_price:
+            total_price = self.available_items[index].item_price - discount
+            self.pellets -= total_price
             self.pellet_label.text = f"Pellets: {self.pellets}"
             self.sync_data('pellets', self.pellets)
+            self.play(music_file=self.configObj.toml_dict['music']['shopBuySuccess'])
         else:
+            self.play(music_file=self.configObj.toml_dict['music']['shopBuyError'])
             raise tastyerrors.InsufficientFundsError(f"Sufficient pellets aren't available to buy {item}")
         if item == "Laser Boost":
             self.laser_powers += 1
@@ -174,6 +201,7 @@ class SectorEightShop:
         elif item == "Extra Life":
             self.extra_lives += 1
             self.sync_data('extra_lives', self.extra_lives)
+        self.transaction_id = self.generate_id(12)
         self.log_buy(self.transaction_id, item)
         
     def make_recommended_item(self):
@@ -181,16 +209,25 @@ class SectorEightShop:
         for item in self.available_items:
             if suggested_item == item.item_name:
                 break
-        discount = random.randint(1, item.item_price - 1)
+        self.item_discount = random.randint(1, item.item_price - 1)
             
         self.rec_badge = utilities.Badge(
             x=20, y=0,
             width=1000, height=self.ruler_y, bg_color=item.bg_color, 
             btn_color=(150, 200, 150, 225), emoji_color=(200, 200, 200), main_text_color=(0, 0, 0, 225),
             main_text=item.item_name, emoji="\U0001F4AF", 
-            btn_text=f"Offer: Buy now for {item.item_price - discount}P", bob=True, batch=self.interface
+            btn_text=f"Offer: Buy now for {item.item_price - self.item_discount}P", bob=True, batch=self.interface
             
         )
+        self.rec_obj.release_file() # Needed for the database to close properly.
+        
+    def make_option_buttons(self) -> None:
+        self.home_button = utilities.Button('\U0001f3e1', 1390, self.pellet_label.y - 25, 60, 50, 
+                                            self.interface, (78, 205, 196), 25, self.emoji_font)
+        self.game_button = utilities.Button("\U000021A9", 1460, self.pellet_label.y - 25, 60, 50, 
+                                            self.interface, (255, 107, 107), 25, self.emoji_font)
+        self.query_button = utilities.Button('\u2754', 1530, self.pellet_label.y - 25, 60, 50,
+                                             self.interface, (255, 230, 109), 25, self.emoji_font)
     def init_window(self):
         
         self.ruler = pyglet.shapes.Line(-10, self.ruler_y,  self.ruler_x + 100_000, self.ruler_y,
@@ -219,24 +256,7 @@ class SectorEightShop:
                              self.product_label])
         self.add_scrolllist(self.badge_list)
         self.add_scrolllist(self.rec_badge)    
-    def play(self, **kwargs):
-        try:
-            if not kwargs:
-                if not self.music_switch:
-                    winsound.PlaySound("audio/shop-music.wav", winsound.SND_FILENAME | winsound.SND_LOOP | winsound.SND_ASYNC)
-                                       
-            else:
-                # For custom music files passed via kwargs
-                device = miniaudio.PlaybackDevice()
-                stream = miniaudio.stream_file(kwargs['music_file'])
-                device.start(stream)
-        except KeyError:
-            return 'KeyError Encountered'
-    
-        
-    def stop_music(self):
-        winsound.PlaySound(None, winsound.SND_FILENAME)
-        self.music_switch = False
+        self.make_option_buttons()
     def update(self, dt):
         for obj in self.scroll_objects:
             if hasattr(obj, 'update'):

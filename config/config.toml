@@ -16,6 +16,8 @@ magnetLosingEffect = "audio/magnet-losing.wav"
 powerUpEffect =  "audio/chime.wav"
 invisibleEffect = "audio/invisible.wav"
 shopBackground = "audio/shop-music.wav"
+shopBuySuccess = "audio/buy-success.wav"
+shopBuyError = "audio/buy-error.wav"
 
 [data]
 MatrixRenderingFile = "data/ascii-art.txt"

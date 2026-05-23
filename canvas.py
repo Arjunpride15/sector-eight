@@ -787,7 +787,8 @@ class SectorEight:
             self.you_won()
             self.translucent_layer.opacity = 100
             self.translucent_layer.color = (57, 255, 20) # Green
-
+            pyglet.clock.unschedule(self.update)
+            pyglet.clock.unschedule(self.ghost_update)
         elif self.eater_lives == 1:
             self.translucent_layer.opacity = 60
             self.translucent_layer.color = (237, 145, 33) # Orange
@@ -798,6 +799,8 @@ class SectorEight:
             self.you_lost()
             self.translucent_layer.opacity = 128
             self.translucent_layer.color = (255, 20, 60) # Red
+            pyglet.clock.unschedule(self.update)
+            pyglet.clock.unschedule(self.ghost_update)
     def restart_game(self):
         self.data_store.close()
         Popen(["restart.cmd"])

@@ -1,6 +1,7 @@
 import shelve
 import statistics
 
+
 class SectorEightRecommendations:
     def __init__(self):
         self.log_store = shelve.open(r"data\purchases")
@@ -9,8 +10,8 @@ class SectorEightRecommendations:
     def get_item_history(self) -> list[str]:
         history_list = list()
         for item in self.log:
-            stripped_item = item.split(sep=" ")
-            history_list.append(stripped_item[2])
+            stripped_item = item.split(sep=" | ")
+            history_list.append(stripped_item[1])
         return history_list
     
     def get_recommended_item(self) -> str:
@@ -20,5 +21,8 @@ class SectorEightRecommendations:
         except statistics.StatisticsError:
             return "Laser Boost"
         return recommended_item
+    
+    def release_file(self):
+        self.log_store.close()
         
         

@@ -37,6 +37,9 @@ def on_mouse_press(x, y, button, modifiers):
             if badge.is_clicked(x, y):
                 #print(f"Purchasing: {badge.title.text}")
                 shop_instance.buy(badge.title.text)
+        if shop_instance.rec_badge.is_clicked(x, y):
+            shop_instance.buy(shop_instance.rec_badge.title.text, 
+                              discount=shop_instance.item_discount)
 @window.event
 def on_key_press(symbol, modifiers):
     move = 0
