@@ -177,7 +177,7 @@ class SectorEightShop:
                 break
         # Note: The index and prod variables are available to use even after the loop finishes.
         # This approach that we have followed is very performance-centic and lightweight!
-        if self.pellets > 0 or self.pellets >= self.available_items[index].item_price:
+        if self.pellets > 0 and self.pellets >= self.available_items[index].item_price:
             total_price = self.available_items[index].item_price - discount
             self.pellets -= total_price
             self.pellet_label.text = f"Pellets: {self.pellets}"
