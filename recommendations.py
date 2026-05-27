@@ -1,6 +1,7 @@
 import shelve
 import statistics
-
+import datetime
+from typing import Any
 
 class SectorEightRecommendations:
     def __init__(self):
@@ -24,5 +25,36 @@ class SectorEightRecommendations:
     
     def release_file(self):
         self.log_store.close()
+
+class SectorEightHistory:
+    def __init__(self):
+        self.log_store = shelve.open(r"data\purchases")
+        self.log: list[str] = self.log_store.get('log', list())
+        self.datetime_list: list[Any]  = list()
+    
+    def get_general_history(self):
+        full_history = list()
+        for item in self.log:
+            stripped_item = item.split(sep=" | ")
+            item_history = list()
+            for sub_item in stripped_item:
+                item_history.append(sub_item)
+            full_history.append(tuple(item_history))
+        return full_history
+    
+    def get_date_time_history(self):
+        
+        for item in self.get_general_history():
+            item_date_time: str = item[0]
+            dt_obj = datetime.datetime.fromisoformat(item_date_time)
+            item_date = dt_obj.strftime("%A, %b %d, %Y")
+            item_time = dt_obj.strftime('%H : %M (24-hour format)')
+            self.datetime_list.append({'date': item_date, 'time': item_time})
+            
+        return self.datetime_list
+            
+            
+            
+    
         
         

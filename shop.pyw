@@ -20,26 +20,40 @@ def on_draw():
     
 @window.event
 def on_mouse_scroll(x, y, scroll_x, scroll_y):
-    # Calculate intended move
-    move = 20 if scroll_y < 0 else -20
-    
-    # Check if the NEW offset would be in bounds
-    if shop_instance.max_scroll >= (shop_instance.offset_x + move) >= shop_instance.min_scroll:
-        shop_instance.offset_x += move
-        for sprite in shop_instance.scroll_objects:
-            sprite.x += move
+    if shop_instance.main_view:
+        # Calculate intended move
+        move = 20 if scroll_y < 0 else -20
+        
+        # Check if the NEW offset would be in bounds
+        if shop_instance.max_scroll >= (shop_instance.offset_x + move) >= shop_instance.min_scroll:
+            shop_instance.offset_x += move
+            for sprite in shop_instance.scroll_objects:
+                sprite.x += move
             
 @window.event
 def on_mouse_press(x, y, button, modifiers):
     if button == mouse.LEFT:
-        for badge in shop_instance.badge_list:
-            # Check if the mouse click is within the badge's button boundaries
-            if badge.is_clicked(x, y):
-                #print(f"Purchasing: {badge.title.text}")
-                shop_instance.buy(badge.title.text)
-        if shop_instance.rec_badge.is_clicked(x, y):
-            shop_instance.buy(shop_instance.rec_badge.title.text, 
-                              discount=shop_instance.item_discount)
+        if shop_instance.main_view:
+            for badge in shop_instance.badge_list:
+                # Check if the mouse click is within the badge's button boundaries
+                if badge.is_clicked(x, y):
+                    #print(f"Purchasing: {badge.title.text}")
+                    shop_instance.buy(badge.title.text)
+            if shop_instance.rec_badge.is_clicked(x, y):
+                shop_instance.buy(shop_instance.rec_badge.title.text, 
+                                discount=shop_instance.item_discount)
+            if shop_instance.home_button.is_clicked(x, y):
+                shop_instance.home()
+            if shop_instance.game_button.is_clicked(x, y):
+                shop_instance.game()
+            if shop_instance.query_button.is_clicked(x, y):
+                shop_instance.query()
+            if shop_instance.history_button.is_clicked(x, y):
+                shop_instance.show_history()
+        else:
+            if shop_instance.cross_button.is_clicked(x, y):
+                shop_instance.hide_history()
+        
 @window.event
 def on_key_press(symbol, modifiers):
     move = 0

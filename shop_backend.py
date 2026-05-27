@@ -43,14 +43,6 @@ class SectorEightShop:
         self.emoji_font = self.configObj.toml_dict['font']['emojiFont']
         self.heading_font = 'Segoe UI'
         self.picks_list = ['TOP PICKS FOR YOU', 'RECOMMENDED', 'SUGGESTED', 'OFTEN BOUGHT']
-        self.info_label = pyglet.text.Label('Shop | Sector Eight',
-                                            font_name="Merriweather Sans",
-                                            weight="light",
-                                            font_size=70,
-                                            x=11,
-                                            y=580,
-                                            batch=self.interface,
-                                            color=(230, 230, 230, 230, 255))
         self.pellet_label = pyglet.text.Label(f'Pellets: {self.pellets}', 
                                               font_name=self.font_list, 
                                               font_size=20,
@@ -122,6 +114,12 @@ class SectorEightShop:
         self.home_button = None
         self.game_button = None
         self.query_button = None
+        self.history_button = None
+        self.cross_button = None
+        self.translucent_layer = None
+        self.main_view = True
+        self.cross_button = None
+        self.history_badge = None        
     def sync_data(self, name, var):
         self.data_storage[name] = var
         self.data_storage.sync()
@@ -177,8 +175,8 @@ class SectorEightShop:
                 break
         # Note: The index and prod variables are available to use even after the loop finishes.
         # This approach that we have followed is very performance-centic and lightweight!
-        if self.pellets > 0 and self.pellets >= self.available_items[index].item_price:
-            total_price = self.available_items[index].item_price - discount
+        total_price = self.available_items[index].item_price - discount
+        if self.pellets > 0 and self.pellets >= total_price:
             self.pellets -= total_price
             self.pellet_label.text = f"Pellets: {self.pellets}"
             self.sync_data('pellets', self.pellets)
@@ -228,6 +226,35 @@ class SectorEightShop:
                                             self.interface, (255, 107, 107), 25, self.emoji_font)
         self.query_button = utilities.Button('\u2754', 1530, self.pellet_label.y - 25, 60, 50,
                                              self.interface, (255, 230, 109), 25, self.emoji_font)
+        self.history_button = utilities.Button("\U000023F3", 1320, self.pellet_label.y - 25, 60, 50,
+                                               self.interface, (0, 229, 255, 255), 25, self.emoji_font)
+        
+       
+        
+    def home(self):
+        raise NotImplementedWarning('Home button clicked')
+    
+    def game(self):
+        raise NotImplementedWarning('Game button clicked')
+    
+    def query(self):
+        raise NotImplementedWarning('Query button clicked')
+    
+    def show_history_badge(self):
+        self.history_badge = utilities.Badge(400, 200, 800, 400, (255, 145, 0, 255), (150, 200, 150, 255), 
+                                             (78, 205, 196), (0, 0, 0, 255), "****", "\U000023F3", "View History",
+                                             description="Some description...", batch=self.interface)
+    def show_history(self):
+        self.main_view = False
+        self.translucent_layer.opacity = 100
+        self.cross_button = utilities.Button('\U00002716', 1530, self.pellet_label.y - 75, 60, 50,
+                                             self.interface, (255, 82, 82, 255), 25, self.emoji_font)
+        self.show_history_badge()
+    def hide_history(self):
+        self.main_view = True
+        self.translucent_layer.opacity = 0
+        self.cross_button = None
+        self.history_badge = None
     def init_window(self):
         
         self.ruler = pyglet.shapes.Line(-10, self.ruler_y,  self.ruler_x + 100_000, self.ruler_y,
@@ -249,7 +276,14 @@ class SectorEightShop:
                 )
                 self.badge_list.append(item_badge)
         
-        
+        self.info_label = pyglet.text.Label('Shop | Sector Eight',
+                                            font_name="Merriweather Sans",
+                                            weight="light",
+                                            font_size=70,
+                                            x=11,
+                                            y=580,
+                                            batch=self.interface,
+                                            color=(230, 230, 230, 230, 255))
         self.add_scrolllist([self.picks_label,
                              self.ruler,
                              self.vr1,
@@ -257,6 +291,9 @@ class SectorEightShop:
         self.add_scrolllist(self.badge_list)
         self.add_scrolllist(self.rec_badge)    
         self.make_option_buttons()
+        self.translucent_layer = pyglet.shapes.Rectangle(x=0, y=0, width=self.WINDOW.width, height=self.WINDOW.height, 
+                                                         color=(0, 0, 0), batch=self.interface)
+        self.translucent_layer.opacity = 0
     def update(self, dt):
         for obj in self.scroll_objects:
             if hasattr(obj, 'update'):
