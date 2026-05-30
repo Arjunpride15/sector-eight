@@ -2,7 +2,7 @@
 import pyglet
 from pyglet.window import key, mouse
 import shop_backend
-
+import utilities
 
 window = pyglet.window.Window(width=1600,height=850,caption="Shop | Sector 8")
 
@@ -53,20 +53,42 @@ def on_mouse_press(x, y, button, modifiers):
         else:
             if shop_instance.cross_button.is_clicked(x, y):
                 shop_instance.hide_history()
+            if shop_instance.left_nav_btn.is_clicked(x, y):
+                shop_instance.go_left()
+            if shop_instance.right_nav_btn.is_clicked(x, y):
+                shop_instance.go_right()
+@window.event
+def on_mouse_motion(x, y, dx, dy):
+    if not shop_instance.main_view:
+        if shop_instance.left_nav_btn and shop_instance.right_nav_btn:
+            if shop_instance.left_nav_btn.is_clicked(x, y):
+                shop_instance.left_nav_btn = utilities.Button("\U0000276E", 10, 400, 50, 50, 
+                                                              shop_instance.get_batch(), (225, 225, 225, 225), 25)
+            else:
+                shop_instance.left_nav_btn = utilities.Button("\U0000276E", 10, 400, 50, 50, shop_instance.get_batch(), 
+                                                              (255, 215, 0, 255), 25)
+            if shop_instance.right_nav_btn.is_clicked(x, y):
+                shop_instance.right_nav_btn = utilities.Button("\U0000276F", 1560, 400, 50, 50, 
+                                                      shop_instance.get_batch(), (225, 225, 225, 255), 25)
+            else:
+                shop_instance.right_nav_btn = utilities.Button("\U0000276F", 1560, 400, 50, 50, shop_instance.get_batch(), 
+                                                      (255, 215, 0, 255), 25)
         
 @window.event
 def on_key_press(symbol, modifiers):
-    move = 0
-    if symbol == key.LEFT:
-        move = 50
-    elif symbol == key.RIGHT:
-        move = -50
-        
-    if move != 0:
-        if shop_instance.max_scroll >= (shop_instance.offset_x + move) >= shop_instance.min_scroll:
-            shop_instance.offset_x += move
-            for sprite in shop_instance.scroll_objects:
-                sprite.x += move
+    if shop_instance.main_view:
+        move = 0
+        if symbol == key.LEFT:
+            move = 50
+        elif symbol == key.RIGHT:
+            move = -50
+            
+        if move != 0:
+            if shop_instance.max_scroll >= (shop_instance.offset_x + move) >= shop_instance.min_scroll:
+                shop_instance.offset_x += move
+                for sprite in shop_instance.scroll_objects:
+                    sprite.x += move
+                    #print(".")
         
 @window.event
 def on_close():

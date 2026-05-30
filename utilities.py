@@ -49,7 +49,8 @@ class RoundedRectangle:
             shape.delete()
 
 class Button:
-    def __init__(self, text, x, y, width, height, batch, colour ,radius=15, font_name=font_list, font_size=18):
+    def __init__(self, text, x, y, width, height, batch, colour 
+                 ,radius=15, font_name=font_list, font_size=18, text_color=(255, 255, 255, 255)):
         """
         A simple reusable button for Pyglet.
         """
@@ -79,7 +80,7 @@ class Button:
             y=y + (height // 2),
             anchor_x='center',
             anchor_y='center',
-            color=(255, 255, 255, 255),
+            color=text_color,
             batch=batch
         )
 
@@ -143,9 +144,9 @@ class Badge:
         self.desc = None
         if description:
             self.desc = pyglet.text.Label(description,
-                                          font_name=confObj.toml_dict['font']['fontList'], font_size=9,
+                                          font_name=confObj.toml_dict['font']['fontList'], font_size=20,
                                           color=(255, 255, 255, 180), # Dimmer white
-                                          x=x + width // 2, y=y + 75,
+                                          x=x + width // 2, y=y + 130,
                                           anchor_x='center', anchor_y='center',
                                           multiline=True, width=width-20,
                                           batch=batch)

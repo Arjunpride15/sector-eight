@@ -10,7 +10,7 @@ from typing import NamedTuple
 import random
 import tastyerrors
 import datetime
-from recommendations import SectorEightRecommendations
+from recommendations import SectorEightRecommendations, SectorEightHistory
 
 class ShopItem(NamedTuple):
     item_name: str
@@ -73,14 +73,14 @@ class SectorEightShop:
         self.product_names = {"Laser Boost": self.laser_powers, 
                               "XP Speedups": self.xp_speedups, 
                               "Powerups": self.powerups, 
-                              "Invisibiity": self.invisible_powers, 
+                              "Invisibility": self.invisible_powers, 
                               "Extra Life": self.extra_lives,
                               }
         self.available_items = [
             ShopItem('Laser Boost', 25, "\U0001f52b", (57, 255, 20, 255)),
             ShopItem('XP Speedups', 50, "\u26a1", (127, 235, 232, 255)),
             ShopItem('Powerups', 15, "\u2728", (254, 1, 154, 255)),
-            ShopItem('Invisibiity', 35, "\u2b50", (138, 0, 255, 255)),
+            ShopItem('Invisibility', 35, "\u2b50", (138, 0, 255, 255)),
             ShopItem('Extra Life', 100, "\u2764", (255, 0, 102, 255))
         ]
         self.ruler = None
@@ -119,11 +119,20 @@ class SectorEightShop:
         self.translucent_layer = None
         self.main_view = True
         self.cross_button = None
-        self.history_badge = None        
+        self.history_badge = None
+        self.view_index = -1
+        self.history_instance = SectorEightHistory()
+        self.datetime_history = self.history_instance.get_date_time_history()
+        self.general_history = self.history_instance.get_general_history()
+        self.left_nav_btn = None
+        self.right_nav_btn = None        
     def sync_data(self, name, var):
         self.data_storage[name] = var
         self.data_storage.sync()
-        
+    def update_history(self):
+        self.history_instance = SectorEightHistory()
+        self.datetime_history = self.history_instance.get_date_time_history()
+        self.general_history = self.history_instance.get_general_history() 
     def play(self, **kwargs):
         try:
             if not kwargs:
@@ -142,6 +151,17 @@ class SectorEightShop:
     def stop_music(self):
         winsound.PlaySound(None, winsound.SND_FILENAME)
         self.music_switch = False
+        
+    def send_mouse_scroll(self, scroll_y):
+
+        # Calculate intended move
+        move = 20 if scroll_y < 0 else -20
+        
+        # Check if the NEW offset would be in bounds
+        if self.max_scroll >= (self.offset_x + move) >= self.min_scroll:
+            self.offset_x += move
+            for sprite in self.scroll_objects:
+                sprite.x += move
            
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
@@ -241,20 +261,60 @@ class SectorEightShop:
         raise NotImplementedWarning('Query button clicked')
     
     def show_history_badge(self):
-        self.history_badge = utilities.Badge(400, 200, 800, 400, (255, 145, 0, 255), (150, 200, 150, 255), 
-                                             (78, 205, 196), (0, 0, 0, 255), "****", "\U000023F3", "View History",
-                                             description="Some description...", batch=self.interface)
+        self.update_history()
+        product_datetime = f"Bought on: \
+                                {self.datetime_history[self.view_index]['time']} \
+                                {self.datetime_history[self.view_index]['date']}"
+        transaction_str = f"Transaction ID: {self.general_history[self.view_index][2]}"
+        product_bought = self.general_history[self.view_index][1]
+        self.history_badge = utilities.Badge(400, 200, 800, 600, (32, 34, 84, 255), (100, 255, 237, 255), 
+                                             (255, 111, 196, 255), (255, 255, 255, 255), product_bought, "\U000023F3", "Refund",
+                                             description=f"{product_datetime} \n {transaction_str}", 
+                                             batch=self.interface)
+    def show_nav_buttons(self):
+        self.left_nav_btn = utilities.Button("\U0000276E", 10, 400, 50, 50, self.interface, (255, 215, 0, 255), 25)
+        self.right_nav_btn = utilities.Button("\U0000276F", 1540, 400, 50, 50, self.interface, (255, 215, 0, 255), 25)
     def show_history(self):
         self.main_view = False
         self.translucent_layer.opacity = 100
         self.cross_button = utilities.Button('\U00002716', 1530, self.pellet_label.y - 75, 60, 50,
                                              self.interface, (255, 82, 82, 255), 25, self.emoji_font)
         self.show_history_badge()
+        for _ in range(499):
+            self.send_mouse_scroll(1)
+        self.info_label = None
+        self.show_nav_buttons()
     def hide_history(self):
         self.main_view = True
         self.translucent_layer.opacity = 0
         self.cross_button = None
         self.history_badge = None
+        for _ in range(499):
+            self.send_mouse_scroll(-1)
+        self.info_label = pyglet.text.Label('Shop | Sector Eight',
+                                            font_name="Merriweather Sans",
+                                            weight="light",
+                                            font_size=70,
+                                            x=11,
+                                            y=580,
+                                            batch=self.interface,
+                                            color=(230, 230, 230, 230, 255))
+        self.left_nav_btn = None
+        self.right_nav_btn = None
+    def go_left(self):
+        try:
+            self.view_index += 1
+            self.show_history_badge()
+        except IndexError:
+            self.view_index = -1
+            self.show_history_badge()
+    def go_right(self):
+        try:
+            self.view_index -= 1
+            self.show_history_badge()
+        except IndexError:
+            self.view_index = -1
+            self.show_history_badge()
     def init_window(self):
         
         self.ruler = pyglet.shapes.Line(-10, self.ruler_y,  self.ruler_x + 100_000, self.ruler_y,
@@ -302,9 +362,11 @@ class SectorEightShop:
         self.product_names = {"Laser Boost": self.laser_powers, 
                               "XP Speedups": self.xp_speedups, 
                               "Powerups": self.powerups, 
-                              "Invisibiity": self.invisible_powers, 
+                              "Invisibility": self.invisible_powers, 
                               "Extra Life": self.extra_lives,
                               }
+    def get_batch(self):
+        return self.interface
     def start(self):
         self.play()
         pyglet.clock.schedule_interval(self.update, 1/60.0)
