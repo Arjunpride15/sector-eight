@@ -52,9 +52,9 @@ class SectorEightHistory:
             self.datetime_list.append({'date': item_date, 'time': item_time})
             
         return self.datetime_list
-            
-            
-            
-    
-        
-        
+    def get_trans_id_history(self):
+        trans_id_list = list()
+        for item in self.get_general_history():
+            item_trans_id = item[2]
+            trans_id_list.append(int(item_trans_id))
+        return trans_id_list

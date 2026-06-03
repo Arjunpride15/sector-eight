@@ -18,6 +18,7 @@ invisibleEffect = "audio/invisible.wav"
 shopBackground = "audio/shop-music.wav"
 shopBuySuccess = "audio/buy-success.wav"
 shopBuyError = "audio/buy-error.wav"
+shopHistoryBrowse = "audio/history-nav.wav"
 
 [data]
 MatrixRenderingFile = "data/ascii-art.txt"

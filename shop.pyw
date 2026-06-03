@@ -57,21 +57,29 @@ def on_mouse_press(x, y, button, modifiers):
                 shop_instance.go_left()
             if shop_instance.right_nav_btn.is_clicked(x, y):
                 shop_instance.go_right()
+            if shop_instance.history_badge.is_clicked(x, y):
+                _id = int(shop_instance.general_history[shop_instance.view_index][2])
+                shop_instance.refund(_id)
 @window.event
 def on_mouse_motion(x, y, dx, dy):
     if not shop_instance.main_view:
-        if shop_instance.left_nav_btn and shop_instance.right_nav_btn:
+        if shop_instance.left_nav_btn:
             if shop_instance.left_nav_btn.is_clicked(x, y):
+                shop_instance.left_nav_btn.delete()
                 shop_instance.left_nav_btn = utilities.Button("\U0000276E", 10, 400, 50, 50, 
                                                               shop_instance.get_batch(), (225, 225, 225, 225), 25)
             else:
+                shop_instance.left_nav_btn.delete()
                 shop_instance.left_nav_btn = utilities.Button("\U0000276E", 10, 400, 50, 50, shop_instance.get_batch(), 
                                                               (255, 215, 0, 255), 25)
+        if shop_instance.right_nav_btn:
             if shop_instance.right_nav_btn.is_clicked(x, y):
-                shop_instance.right_nav_btn = utilities.Button("\U0000276F", 1560, 400, 50, 50, 
+                shop_instance.right_nav_btn.delete()
+                shop_instance.right_nav_btn = utilities.Button("\U0000276F", 1540, 400, 50, 50, 
                                                       shop_instance.get_batch(), (225, 225, 225, 255), 25)
             else:
-                shop_instance.right_nav_btn = utilities.Button("\U0000276F", 1560, 400, 50, 50, shop_instance.get_batch(), 
+                shop_instance.right_nav_btn.delete()
+                shop_instance.right_nav_btn = utilities.Button("\U0000276F", 1540, 400, 50, 50, shop_instance.get_batch(), 
                                                       (255, 215, 0, 255), 25)
         
 @window.event

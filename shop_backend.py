@@ -181,8 +181,8 @@ class SectorEightShop:
             purchase_id = purchase_id + str(random.randint(0, 9))
         return int(purchase_id) 
     
-    def log_buy(self, trans_id, name_item):
-        self.log_str = f"{str(datetime.datetime.now())} | {name_item} | {trans_id}"
+    def log_buy(self, trans_id, name_item, item_price):
+        self.log_str = f"{str(datetime.datetime.now())} | {name_item} | {trans_id} | {item_price}"
         self.log.append(self.log_str)
         self.log_file['log'] = self.log
         self.log_file.sync()        
@@ -220,7 +220,7 @@ class SectorEightShop:
             self.extra_lives += 1
             self.sync_data('extra_lives', self.extra_lives)
         self.transaction_id = self.generate_id(12)
-        self.log_buy(self.transaction_id, item)
+        self.log_buy(self.transaction_id, item, total_price)
         
     def make_recommended_item(self):
         suggested_item = self.rec_obj.get_recommended_item()
@@ -267,9 +267,10 @@ class SectorEightShop:
                                 {self.datetime_history[self.view_index]['date']}"
         transaction_str = f"Transaction ID: {self.general_history[self.view_index][2]}"
         product_bought = self.general_history[self.view_index][1]
+        price = f"Cost: {self.general_history[self.view_index][3]}"
         self.history_badge = utilities.Badge(400, 200, 800, 600, (32, 34, 84, 255), (100, 255, 237, 255), 
                                              (255, 111, 196, 255), (255, 255, 255, 255), product_bought, "\U000023F3", "Refund",
-                                             description=f"{product_datetime} \n {transaction_str}", 
+                                             description=f"{product_datetime} \n {transaction_str} \n {price}", 
                                              batch=self.interface)
     def show_nav_buttons(self):
         self.left_nav_btn = utilities.Button("\U0000276E", 10, 400, 50, 50, self.interface, (255, 215, 0, 255), 25)
@@ -302,6 +303,7 @@ class SectorEightShop:
         self.left_nav_btn = None
         self.right_nav_btn = None
     def go_left(self):
+        self.play(music_file=self.configObj.toml_dict['music']['shopHistoryBrowse'])
         try:
             self.view_index += 1
             self.show_history_badge()
@@ -309,12 +311,51 @@ class SectorEightShop:
             self.view_index = -1
             self.show_history_badge()
     def go_right(self):
+        self.play(music_file=self.configObj.toml_dict['music']['shopHistoryBrowse'])
         try:
             self.view_index -= 1
             self.show_history_badge()
         except IndexError:
             self.view_index = -1
             self.show_history_badge()
+    def refund(self, trans_id):
+        for index, _id in enumerate(self.history_instance.get_trans_id_history()):
+            if _id == trans_id:
+                break
+        else:
+            # In this case the transaction ID provided is not present in the log.
+            raise tastyerrors.LogicError('Transaction ID provided to refund() isn\'t valid')
+        item_history = self.general_history[index]
+        item = item_history[1]
+        item_price = item_history[3]
+        spl_effects = [self.laser_powers, 
+                       self.xp_speedups, 
+                       self.powerups, 
+                       self.invisible_powers, 
+                       self.extra_lives]
+        
+        self.pellets += int(item_price)
+        self.pellet_label.text = f"Pellets: {self.pellets}"
+        self.sync_data('pellets', self.pellets)
+        if item == "Laser Boost":
+            self.laser_powers -= 1
+            self.sync_data("laser", self.laser_powers)
+        elif item == "XP Speedups":
+            self.xp_speedups -= 1
+            self.sync_data('xp', self.xp_speedups)
+        elif item == "Powerups":
+            self.powerups -= 1
+            self.sync_data('powerups', self.powerups)
+        elif item == "Invisibility":
+            self.invisible_powers -= 1
+            self.sync_data('invisibility', self.invisible_powers)
+        elif item == "Extra Life":
+            self.extra_lives -= 1
+            self.sync_data('extra_lives', self.extra_lives)
+        del self.log[index]
+        self.log_file['log'] = self.log
+        self.log_file.sync()
+        self.play(music_file=self.configObj.toml_dict['music']['shopBuySuccess'])    
     def init_window(self):
         
         self.ruler = pyglet.shapes.Line(-10, self.ruler_y,  self.ruler_x + 100_000, self.ruler_y,
@@ -359,11 +400,11 @@ class SectorEightShop:
             if hasattr(obj, 'update'):
                 obj.update(dt)
         self.id_label.text = f"Latest Transaction ID: {self.transaction_id}"
-        self.product_names = {"Laser Boost": self.laser_powers, 
-                              "XP Speedups": self.xp_speedups, 
-                              "Powerups": self.powerups, 
-                              "Invisibility": self.invisible_powers, 
-                              "Extra Life": self.extra_lives,
+        self.product_names = {"Laser Boost": 'laser', 
+                              "XP Speedups": 'xp', 
+                              "Powerups": 'powerups', 
+                              "Invisibility": 'invisibility', 
+                              "Extra Life": 'extra_lives',
                               }
     def get_batch(self):
         return self.interface
