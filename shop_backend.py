@@ -125,7 +125,9 @@ class SectorEightShop:
         self.datetime_history = self.history_instance.get_date_time_history()
         self.general_history = self.history_instance.get_general_history()
         self.left_nav_btn = None
-        self.right_nav_btn = None        
+        self.right_nav_btn = None
+        self.miami_glitch_text = None
+        self.bool_glitchy_text_visible = False        
     def sync_data(self, name, var):
         self.data_storage[name] = var
         self.data_storage.sync()
@@ -261,17 +263,25 @@ class SectorEightShop:
         raise NotImplementedWarning('Query button clicked')
     
     def show_history_badge(self):
-        self.update_history()
-        product_datetime = f"Bought on: \
-                                {self.datetime_history[self.view_index]['time']} \
-                                {self.datetime_history[self.view_index]['date']}"
-        transaction_str = f"Transaction ID: {self.general_history[self.view_index][2]}"
-        product_bought = self.general_history[self.view_index][1]
-        price = f"Cost: {self.general_history[self.view_index][3]}"
-        self.history_badge = utilities.Badge(400, 200, 800, 600, (32, 34, 84, 255), (100, 255, 237, 255), 
-                                             (255, 111, 196, 255), (255, 255, 255, 255), product_bought, "\U000023F3", "Refund",
-                                             description=f"{product_datetime} \n {transaction_str} \n {price}", 
-                                             batch=self.interface)
+        try:
+            self.update_history()
+            product_datetime = f"Bought on: \
+                                    {self.datetime_history[self.view_index]['time']} \
+                                    {self.datetime_history[self.view_index]['date']}"
+            transaction_str = f"Transaction ID: {self.general_history[self.view_index][2]}"
+            product_bought = self.general_history[self.view_index][1]
+            price = f"Cost: {self.general_history[self.view_index][3]}"
+            self.history_badge = utilities.Badge(400, 200, 800, 600, (32, 34, 84, 255), (100, 255, 237, 255), 
+                                                (255, 111, 196, 255), (255, 255, 255, 255), product_bought, "\U000023F3", "Refund",
+                                                description=f"{product_datetime} \n {transaction_str} \n {price}", 
+                                                batch=self.interface)
+        except IndexError:
+            if len(self.datetime_history) != 0:
+                self.view_index = -1
+                self.show_history_badge()
+            else:
+                if not self.bool_glitchy_text_visible:
+                    self.make_glitchy_no_history_label()
     def show_nav_buttons(self):
         self.left_nav_btn = utilities.Button("\U0000276E", 10, 400, 50, 50, self.interface, (255, 215, 0, 255), 25)
         self.right_nav_btn = utilities.Button("\U0000276F", 1540, 400, 50, 50, self.interface, (255, 215, 0, 255), 25)
@@ -302,22 +312,26 @@ class SectorEightShop:
                                             color=(230, 230, 230, 230, 255))
         self.left_nav_btn = None
         self.right_nav_btn = None
+        if self.miami_glitch_text:
+            self.miami_glitch_text.clear()
+            self.miami_glitch_text = None
+    def make_glitchy_no_history_label(self):
+        self.miami_glitch_text = utilities.MiamiGlitchLabel(self.WINDOW, 
+                                                            '404 ERROR: HISTORY NOT FOUND',
+                                                            self.interface,
+                                                            subtitle_text="CLICK \U00002716 BUTTON TO RETURN",
+                                                            subtitle=True, 
+                                                            frag_text_list=['NO HISTORY', 
+                                                                            'OOPS! 404 ERROR',
+                                                                            ''])
     def go_left(self):
         self.play(music_file=self.configObj.toml_dict['music']['shopHistoryBrowse'])
-        try:
-            self.view_index += 1
-            self.show_history_badge()
-        except IndexError:
-            self.view_index = -1
-            self.show_history_badge()
+        self.view_index += 1
+        self.show_history_badge()
     def go_right(self):
         self.play(music_file=self.configObj.toml_dict['music']['shopHistoryBrowse'])
-        try:
-            self.view_index -= 1
-            self.show_history_badge()
-        except IndexError:
-            self.view_index = -1
-            self.show_history_badge()
+        self.view_index -= 1
+        self.show_history_badge()
     def refund(self, trans_id):
         for index, _id in enumerate(self.history_instance.get_trans_id_history()):
             if _id == trans_id:
@@ -337,19 +351,19 @@ class SectorEightShop:
         self.pellets += int(item_price)
         self.pellet_label.text = f"Pellets: {self.pellets}"
         self.sync_data('pellets', self.pellets)
-        if item == "Laser Boost":
+        if item == "Laser Boost" and self.laser_powers != 0:
             self.laser_powers -= 1
             self.sync_data("laser", self.laser_powers)
-        elif item == "XP Speedups":
+        elif item == "XP Speedups" and self.xp_speedups != 0:
             self.xp_speedups -= 1
             self.sync_data('xp', self.xp_speedups)
-        elif item == "Powerups":
+        elif item == "Powerups" and self.powerups != 0:
             self.powerups -= 1
             self.sync_data('powerups', self.powerups)
-        elif item == "Invisibility":
+        elif item == "Invisibility" and self.invisible_powers != 0:
             self.invisible_powers -= 1
             self.sync_data('invisibility', self.invisible_powers)
-        elif item == "Extra Life":
+        elif item == "Extra Life" and self.extra_lives != 0:
             self.extra_lives -= 1
             self.sync_data('extra_lives', self.extra_lives)
         del self.log[index]

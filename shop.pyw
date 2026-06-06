@@ -51,15 +51,19 @@ def on_mouse_press(x, y, button, modifiers):
             if shop_instance.history_button.is_clicked(x, y):
                 shop_instance.show_history()
         else:
-            if shop_instance.cross_button.is_clicked(x, y):
-                shop_instance.hide_history()
-            if shop_instance.left_nav_btn.is_clicked(x, y):
-                shop_instance.go_left()
-            if shop_instance.right_nav_btn.is_clicked(x, y):
-                shop_instance.go_right()
-            if shop_instance.history_badge.is_clicked(x, y):
-                _id = int(shop_instance.general_history[shop_instance.view_index][2])
-                shop_instance.refund(_id)
+            if shop_instance.cross_button:
+                if shop_instance.cross_button.is_clicked(x, y):
+                    shop_instance.hide_history()
+            if shop_instance.left_nav_btn:
+                if shop_instance.left_nav_btn.is_clicked(x, y):
+                    shop_instance.go_left()
+            if shop_instance.right_nav_btn:
+                if shop_instance.right_nav_btn.is_clicked(x, y):
+                    shop_instance.go_right()
+            if shop_instance.history_badge:
+                if shop_instance.history_badge.is_clicked(x, y):
+                    _id = int(shop_instance.general_history[shop_instance.view_index][2])
+                    shop_instance.refund(_id)
 @window.event
 def on_mouse_motion(x, y, dx, dy):
     if not shop_instance.main_view:

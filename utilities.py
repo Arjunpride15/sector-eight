@@ -1,6 +1,7 @@
 import pyglet
 import conf
 import math
+import random
 
 confObj = conf.Config()
 font_list = confObj.toml_dict['font']['fontList']
@@ -208,3 +209,195 @@ class Badge:
         """Detects if the mouse clicked the BUTTON area specifically"""
         return (self.btn_bg.x <= mouse_x <= self.btn_bg.x + self.btn_bg.width and
                 self.btn_bg.y <= mouse_y <= self.btn_bg.y + self.btn_bg.height)
+
+class MiamiGlitchLabel:
+    """
+    A class for making absolute glitchy text using Chromatic Aberration. :-)
+    If `coords` argument isn't provided, the text defaults to center.
+    This class is primarily used in the glitchy 'No History' label.
+    """
+    def __init__(self, window, text, batch,subtitle_text=None, 
+                 subtitle=False, coords=None, frag_text_list=None,font_name=font_list, font_size=36):
+        self.text = text
+        self.subtitle_text = subtitle_text
+        self.bool_subtitle = subtitle
+        self.window = window
+        self.font_name = font_name
+        self.font_size = font_size
+        self.interface = batch
+        if frag_text_list:
+            self.frag_text_list = frag_text_list
+            self.fragments = True
+        else:
+            self.frag_text_list = []
+            self.fragments = False
+        try:
+            self.x = coords[0]
+            self.y = coords[1]
+        except Exception:
+            self.x = self.window.width // 2
+            self.y = self.window.height // 2
+        self.setup_miami_glitch_ui()
+        pyglet.clock.schedule_interval(func=self.update_glitch, interval=1/60)
+    def setup_miami_glitch_ui(self):
+        """Creates a high-fidelity 5-layer chromatic aberration text stack for empty states."""
+        center_x = self.x
+        center_y = self.y
+        
+        glitch_text = self.text
+        font_size = self.font_size
+        f_name = self.font_name
+        
+        # 1. DEEP BLACK SHADOW LAYER (For maximum readability against game backgrounds)
+        self.glitch_shadow = pyglet.text.Label(
+            glitch_text, font_name=f_name, font_size=font_size, weight="bold",
+            x=center_x + 2, y=center_y - 2, anchor_x='center', anchor_y='center',
+            color=(15, 15, 25, 255), batch=self.interface
+        )
+        
+        # 2. CYAN LAYER (Far Left Offset)
+        self.glitch_cyan = pyglet.text.Label(
+            glitch_text, font_name=f_name, font_size=font_size, weight="bold",
+            x=center_x - 6, y=center_y + 2, anchor_x='center', anchor_y='center',
+            color=(0, 240, 255, 200), batch=self.interface
+        )
+        
+        # 3. LIME GREEN LAYER (Mid Left Offset)
+        self.glitch_green = pyglet.text.Label(
+            glitch_text, font_name=f_name, font_size=font_size, weight="bold",
+            x=center_x - 3, y=center_y - 1, anchor_x='center', anchor_y='center',
+            color=(57, 255, 20, 180), batch=self.interface
+        )
+        
+        # 4. ELECTRIC PURPLE LAYER (Mid Right Offset)
+        self.glitch_purple = pyglet.text.Label(
+            glitch_text, font_name=f_name, font_size=font_size, weight="bold",
+            x=center_x + 3, y=center_y + 1, anchor_x='center', anchor_y='center',
+            color=(186, 85, 211, 180), batch=self.interface
+        )
+        
+        # 5. NEON MAGENTA LAYER (Far Right Offset)
+        self.glitch_magenta = pyglet.text.Label(
+            glitch_text, font_name=f_name, font_size=font_size, weight="bold",
+            x=center_x + 6, y=center_y - 2, anchor_x='center', anchor_y='center',
+            color=(255, 0, 127, 200), batch=self.interface
+        )
+        
+        # 6. FOREGROUND CORE LAYER (Stable Center)
+        self.glitch_white = pyglet.text.Label(
+            glitch_text, font_name=f_name, font_size=font_size, weight="bold",
+            x=center_x, y=center_y, anchor_x='center', anchor_y='center',
+            color=(255, 255, 255, 255), batch=self.interface
+        )
+        
+        # --- THE RANDOM FRAGMENT SPLIT LABELS ---
+        # These start completely transparent (opacity=0) and hidden off-screen!
+        if self.fragments:
+            self.fragment_left = pyglet.text.Label(
+                random.choice(self.frag_text_list), font_name=f_name, font_size=font_size, weight="bold",
+                x=center_x, y=center_y, anchor_x='center', anchor_y='center',
+                color=(0, 240, 255, 0), batch=self.interface
+            )
+            self.fragment_right = pyglet.text.Label(
+                random.choice(self.frag_text_list), font_name=f_name, font_size=font_size, weight="bold",
+                x=center_x, y=center_y, anchor_x='center', anchor_y='center',
+                color=(255, 0, 127, 0), batch=self.interface
+            )
+        if self.bool_subtitle:
+            # Instruction Subtitle
+            self.glitch_sub = pyglet.text.Label(
+                self.subtitle_text,
+                font_name=f_name, font_size=16, x=center_x, y=center_y - 100,
+                anchor_x='center', anchor_y='center', color=(255, 215, 0, 150),
+                batch=self.interface
+            )
+        
+    def update_glitch(self, dt):
+        if hasattr(self, 'glitch_white') and self.glitch_white is not None:
+            center_x = self.window.width // 2
+            center_y = self.window.height // 2
+            
+            dice_roll = random.random()
+            
+            # CONDITION A: The Ultimate Tear/Split Event (3% chance per frame)
+            if dice_roll < 0.03:
+                # Hide the clean center white label completely to simulate hardware failure!
+                self.glitch_white.color = (255, 255, 255, 0)
+                
+                # Snap the 5 aberration layers into extreme wild tracking offsets
+                self.glitch_cyan.x = center_x - random.randint(20, 40)
+                self.glitch_magenta.x = center_x + random.randint(20, 40)
+                self.glitch_green.y = center_y + random.randint(10, 20)
+                self.glitch_purple.y = center_y - random.randint(10, 20)
+                if self.fragments:
+                    # REVEAL THE TWO FRAGMENT LABELS flying apart!
+                    self.fragment_left.x = center_x - random.randint(50, 120)
+                    self.fragment_left.y = center_y + random.randint(-15, 15)
+                    self.fragment_left.color = (0, 240, 255, 255) # High opacity Cyan text fragment
+                    
+                    self.fragment_right.x = center_x + random.randint(50, 120)
+                    self.fragment_right.y = center_y + random.randint(-15, 15)
+                    self.fragment_right.color = (255, 0, 127, 255) # High opacity Magenta text fragment
+                
+            # CONDITION B: Standard Micro-Jitter (15% chance if not splitting)
+            elif dice_roll < 0.18:
+                # Keep fragments completely hidden/invisible
+                if self.fragments:
+                    self.fragment_left.color = (0, 240, 255, 0)
+                    self.fragment_right.color = (255, 0, 127, 0)
+                self.glitch_white.color = (255, 255, 255, 255) # Foreground visible
+                
+                # Standard tight aberrations twitching
+                t_x = random.randint(-8, 8)
+                t_y = random.randint(-4, 4)
+                
+                self.glitch_cyan.x = (center_x - 6) + t_x
+                self.glitch_magenta.x = (center_x + 6) - t_x
+                self.glitch_green.x = (center_x - 3) + (t_x // 2)
+                self.glitch_purple.x = (center_x + 3) - (t_x // 2)
+                self.glitch_cyan.y = (center_y + 2) + t_y
+                
+            # CONDITION C: Return to beautiful stable resting Chromatic Aberration
+            else:
+                if self.fragments:
+                    self.fragment_left.color = (0, 240, 255, 0)
+                    self.fragment_right.color = (255, 0, 127, 0)
+                self.glitch_white.color = (255, 255, 255, 255)
+                self.glitch_cyan.x = center_x - 6
+                self.glitch_cyan.y = center_y + 2
+                self.glitch_green.x = center_x - 3
+                self.glitch_green.y = center_y - 1
+                self.glitch_purple.x = center_x + 3
+                self.glitch_purple.y = center_y + 1
+                self.glitch_magenta.x = center_x + 6
+                self.glitch_magenta.y = center_y - 2        
+        
+    def clear(self):
+        if hasattr(self, 'glitch_white') and self.glitch_white is not None:
+            pyglet.clock.unschedule(func=self.update_glitch)
+            if self.fragments:
+                if self.bool_subtitle:
+                    del_list = [self.glitch_shadow, self.glitch_cyan, self.glitch_green, 
+                            self.glitch_purple, self.glitch_magenta, self.glitch_white, 
+                            self.fragment_left, self.fragment_right, self.glitch_sub]
+                else:
+                    del_list = [self.glitch_shadow, self.glitch_cyan, self.glitch_green, 
+                            self.glitch_purple, self.glitch_magenta, self.glitch_white, 
+                            self.fragment_left, self.fragment_right]
+            else:
+                if self.bool_subtitle:
+                    del_list = [self.glitch_shadow, self.glitch_cyan, self.glitch_green, 
+                            self.glitch_purple, self.glitch_magenta, self.glitch_white, 
+                            self.glitch_sub]
+                else:
+                    del_list = [self.glitch_shadow, self.glitch_cyan, self.glitch_green, 
+                        self.glitch_purple, self.glitch_magenta, self.glitch_white]
+                
+            # Delete every single element safely
+            for index, label in enumerate(del_list):
+                if label is not None:
+                    label.delete()
+                    del del_list[index]
+                    
+            # Wipe variables
+            self.glitch_white = None            
