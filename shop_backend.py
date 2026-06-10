@@ -86,8 +86,8 @@ class SectorEightShop:
         self.ruler = None
         self.type_checklist = (pyglet.text.Label, pyglet.sprite.Sprite, pyglet.shapes.Line, utilities.Badge)
         self.ruler_x = self.picks_label.x
-        self.ruler_y = (self.picks_label.y - 10)
-        self.number_of_vrulers = 2
+        self.ruler_y = self.picks_label.y
+        self.number_of_vrulers = 3
         self.vruler_list = list()
         for _ in range(self.number_of_vrulers):
             vruler = pyglet.shapes.Line(-100, 0, -100, self.ruler_y,
@@ -95,6 +95,7 @@ class SectorEightShop:
             self.vruler_list.append(vruler)
         self.vr1 = self.vruler_list[1]
         self.vr1.x = self.vr1.x2 = 1_100
+        self.vr2 = self.vruler_list[2]
         self.product_label = pyglet.text.Label(
             text="PRODUCTS",
             font_name=self.heading_font,
@@ -127,7 +128,17 @@ class SectorEightShop:
         self.left_nav_btn = None
         self.right_nav_btn = None
         self.miami_glitch_text = None
-        self.bool_glitchy_text_visible = False        
+        self.bool_glitchy_text_visible = False
+        self.background = (0.2, 0.2, 0.35, 1.0)
+        self.theme_dropdown = None
+        self.theme_backgrounds = {
+            'Dark+': (30/255, 30/255, 30/255, 1.0),
+            'Epic Dark Blue': (15/255, 18/255, 32/255, 1.0),
+            'Modern Blue': (0.2, 0.2, 0.35, 1),
+            'Simply Light': (0.898, 0.914, 0.941, 1.0),
+            'Light Sunset': (253/255, 230/255, 224/255, 1.0),
+            'Neon Mania': (random.random(), random.random(), random.random(), 1.0)
+        }
     def sync_data(self, name, var):
         self.data_storage[name] = var
         self.data_storage.sync()
@@ -310,14 +321,16 @@ class SectorEightShop:
                                             y=580,
                                             batch=self.interface,
                                             color=(230, 230, 230, 230, 255))
+        self.view_index = -1
         self.left_nav_btn = None
         self.right_nav_btn = None
         if self.miami_glitch_text:
             self.miami_glitch_text.clear()
             self.miami_glitch_text = None
+        
     def make_glitchy_no_history_label(self):
         self.miami_glitch_text = utilities.MiamiGlitchLabel(self.WINDOW, 
-                                                            '404 ERROR: HISTORY NOT FOUND',
+                                                            '404 ERROR: NO HISTORY AVAILABLE',
                                                             self.interface,
                                                             subtitle_text="CLICK \U00002716 BUTTON TO RETURN",
                                                             subtitle=True, 
@@ -369,7 +382,29 @@ class SectorEightShop:
         del self.log[index]
         self.log_file['log'] = self.log
         self.log_file.sync()
-        self.play(music_file=self.configObj.toml_dict['music']['shopBuySuccess'])    
+        self.play(music_file=self.configObj.toml_dict['music']['shopBuySuccess'])
+        self.hide_history()
+        self.show_history()
+    def change_theme(self, theme):
+        self.background = self.theme_backgrounds[theme]
+        if 'Light' in theme:
+             self.info_label = pyglet.text.Label('Shop | Sector Eight',
+                                            font_name="Merriweather Sans",
+                                            weight="light",
+                                            font_size=70,
+                                            x=11,
+                                            y=580,
+                                            batch=self.interface,
+                                            color=(25, 25, 25, 255))
+        else:
+            self.info_label = pyglet.text.Label('Shop | Sector Eight',
+                                        font_name="Merriweather Sans",
+                                        weight="light",
+                                        font_size=70,
+                                        x=11,
+                                        y=580,
+                                        batch=self.interface,
+                                        color=(230, 230, 230, 230, 255))
     def init_window(self):
         
         self.ruler = pyglet.shapes.Line(-10, self.ruler_y,  self.ruler_x + 100_000, self.ruler_y,
@@ -390,7 +425,7 @@ class SectorEightShop:
                     item.item_name, item.item_esc_char, f"Buy for {item.item_price}P", bob=True, batch=self.interface
                 )
                 self.badge_list.append(item_badge)
-        
+        self.vr2.x = self.vr2.x2 = (self.badge_list[-1].x) + (self.badge_list[-1].width) + 100
         self.info_label = pyglet.text.Label('Shop | Sector Eight',
                                             font_name="Merriweather Sans",
                                             weight="light",
@@ -399,6 +434,8 @@ class SectorEightShop:
                                             y=580,
                                             batch=self.interface,
                                             color=(230, 230, 230, 230, 255))
+        
+        
         self.add_scrolllist([self.picks_label,
                              self.ruler,
                              self.vr1,
@@ -406,9 +443,16 @@ class SectorEightShop:
         self.add_scrolllist(self.badge_list)
         self.add_scrolllist(self.rec_badge)    
         self.make_option_buttons()
+        self.theme_dropdown = utilities.DropDownMenu(self.WINDOW, self.history_button.x - 10, 
+                                                     self.pellet_label.y - 100,
+                                                     400, 40, list(self.theme_backgrounds.keys()), 
+                                                     batch=self.interface, 
+                                                     on_select=self.change_theme, accent_color=(150, 150, 150, 255),
+                                                     default_index=2)
         self.translucent_layer = pyglet.shapes.Rectangle(x=0, y=0, width=self.WINDOW.width, height=self.WINDOW.height, 
                                                          color=(0, 0, 0), batch=self.interface)
         self.translucent_layer.opacity = 0
+    
     def update(self, dt):
         for obj in self.scroll_objects:
             if hasattr(obj, 'update'):
@@ -420,6 +464,8 @@ class SectorEightShop:
                               "Invisibility": 'invisibility', 
                               "Extra Life": 'extra_lives',
                               }
+        self.theme_backgrounds['Neon Mania'] = (random.random(), random.random(), random.random(), 1.0)
+    
     def get_batch(self):
         return self.interface
     def start(self):

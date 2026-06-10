@@ -17,6 +17,7 @@ def on_draw():
     # Clear the window to avoid drawing over previous frames
     window.clear()
     shop_instance.interface.draw()
+    pyglet.gl.glClearColor(*shop_instance.background)
     
 @window.event
 def on_mouse_scroll(x, y, scroll_x, scroll_y):
@@ -33,6 +34,7 @@ def on_mouse_scroll(x, y, scroll_x, scroll_y):
 @window.event
 def on_mouse_press(x, y, button, modifiers):
     if button == mouse.LEFT:
+        shop_instance.theme_dropdown.on_mouse_press(x, y, button, modifiers)
         if shop_instance.main_view:
             for badge in shop_instance.badge_list:
                 # Check if the mouse click is within the badge's button boundaries
@@ -66,6 +68,7 @@ def on_mouse_press(x, y, button, modifiers):
                     shop_instance.refund(_id)
 @window.event
 def on_mouse_motion(x, y, dx, dy):
+    shop_instance.theme_dropdown.on_mouse_motion(x, y, dx, dy)
     if not shop_instance.main_view:
         if shop_instance.left_nav_btn:
             if shop_instance.left_nav_btn.is_clicked(x, y):

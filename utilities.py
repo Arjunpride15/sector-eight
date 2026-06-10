@@ -2,7 +2,7 @@ import pyglet
 import conf
 import math
 import random
-
+from pyglet.window import key
 confObj = conf.Config()
 font_list = confObj.toml_dict['font']['fontList']
 def coord_distance(x1, y1, x2, y2):
@@ -319,8 +319,8 @@ class MiamiGlitchLabel:
             
             dice_roll = random.random()
             
-            # CONDITION A: The Ultimate Tear/Split Event (3% chance per frame)
-            if dice_roll < 0.03:
+            
+            if dice_roll < 0.25:
                 # Hide the clean center white label completely to simulate hardware failure!
                 self.glitch_white.color = (255, 255, 255, 0)
                 
@@ -339,8 +339,8 @@ class MiamiGlitchLabel:
                     self.fragment_right.y = center_y + random.randint(-15, 15)
                     self.fragment_right.color = (255, 0, 127, 255) # High opacity Magenta text fragment
                 
-            # CONDITION B: Standard Micro-Jitter (15% chance if not splitting)
-            elif dice_roll < 0.18:
+            
+            elif dice_roll < 0.3:
                 # Keep fragments completely hidden/invisible
                 if self.fragments:
                     self.fragment_left.color = (0, 240, 255, 0)
@@ -357,7 +357,7 @@ class MiamiGlitchLabel:
                 self.glitch_purple.x = (center_x + 3) - (t_x // 2)
                 self.glitch_cyan.y = (center_y + 2) + t_y
                 
-            # CONDITION C: Return to beautiful stable resting Chromatic Aberration
+            
             else:
                 if self.fragments:
                     self.fragment_left.color = (0, 240, 255, 0)
@@ -397,7 +397,177 @@ class MiamiGlitchLabel:
             for index, label in enumerate(del_list):
                 if label is not None:
                     label.delete()
-                    del del_list[index]
+                    label = None
                     
             # Wipe variables
-            self.glitch_white = None            
+            self.glitch_white = None
+
+class DropDownMenu:
+    def __init__(self, window, x, y, width, height, options, default_index=0,
+                 font_name=font_list, font_size=14,
+                 bg_color=(30, 30, 45, 255),       # Base background
+                 hover_color=(50, 50, 70, 255),    # Color when hovering over items
+                 accent_color=(0, 240, 255, 255),  # Arrow/Border accent (Cyan)
+                 text_color=(255, 255, 255, 255),  # Option text color
+                 batch=None, group=None, on_select=None):
+        
+        self.window = window
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.options = options
+        self.selected_index = default_index
+        
+        self.font_name = font_name
+        self.font_size = font_size
+        self.bg_color = bg_color
+        self.hover_color = hover_color
+        self.accent_color = accent_color
+        self.text_color = text_color
+        
+        self.batch = batch if batch else pyglet.graphics.Batch()
+        self.group = group
+        self.on_select = on_select  # Callback function: callback(selected_value)
+        
+        self.is_open = False
+        self.hovered_index = -1
+        
+        # Track active dynamic graphics elements
+        self.shapes = []
+        self.labels = []
+        
+        # Build the initial collapsed state of the dropdown button
+        self.update_graphics()
+
+    @property
+    def current_value(self):
+        return self.options[self.selected_index]
+
+    def update_graphics(self):
+        """Clears and rebuilds the visual look of the dropdown based on state."""
+        # Cleanup old geometric primitives and labels
+        self.shapes.clear()
+        self.labels.clear()
+        
+        # 1. DRAW MAIN HEADER BOX
+        # Outer Border Box
+        border = pyglet.shapes.Rectangle(
+            self.x - 1, self.y - 1, self.width + 2, self.height + 2,
+            color=self.accent_color[:3], batch=self.batch, group=self.group
+        )
+        border.opacity = self.accent_color[3]
+        self.shapes.append(border)
+        
+        # Inner Fill Box
+        main_box = pyglet.shapes.Rectangle(
+            self.x, self.y, self.width, self.height,
+            color=self.bg_color[:3], batch=self.batch, group=self.group
+        )
+        main_box.opacity = self.bg_color[3]
+        self.shapes.append(main_box)
+        
+        # Current Value Text
+        val_label = pyglet.text.Label(
+            self.current_value, font_name=self.font_name, font_size=self.font_size,
+            x=self.x + 10, y=self.y + (self.height // 2),
+            anchor_x='left', anchor_y='center', color=self.text_color,
+            batch=self.batch, group=self.group
+        )
+        self.labels.append(val_label)
+        
+        # Little Drop Down Indicator Arrow (▼ or ▲)
+        arrow_char = "▲" if self.is_open else "▼"
+        arrow_label = pyglet.text.Label(
+            arrow_char, font_name=self.font_name, font_size=self.font_size - 2,
+            x=self.x + self.width - 20, y=self.y + (self.height // 2),
+            anchor_x='center', anchor_y='center', color=self.accent_color,
+            batch=self.batch, group=self.group
+        )
+        self.labels.append(arrow_label)
+        
+        # 2. IF OPEN, DRAW THE FLYOUT OPTIONS LIST BELOW
+        if self.is_open:
+            for i, opt in enumerate(self.options):
+                opt_y = self.y - ((i + 1) * self.height)
+                
+                # Determine background box color (highlight if hovered)
+                box_color = self.hover_color if i == self.hovered_index else self.bg_color
+                
+                # Option list container background
+                opt_box = pyglet.shapes.Rectangle(
+                    self.x, opt_y, self.width, self.height,
+                    color=box_color[:3], batch=self.batch, group=self.group
+                )
+                opt_box.opacity = box_color[3]
+                self.shapes.append(opt_box)
+                
+                # Side separator border highlight line
+                opt_border = pyglet.shapes.Rectangle(
+                    self.x, opt_y, 2, self.height,
+                    color=self.accent_color[:3], batch=self.batch, group=self.group
+                )
+                opt_border.opacity = 255 if i == self.hovered_index else 50
+                self.shapes.append(opt_border)
+                
+                # Option text
+                opt_label = pyglet.text.Label(
+                    opt, font_name=self.font_name, font_size=self.font_size,
+                    x=self.x + 15 if i == self.hovered_index else self.x + 10, # Jitter indent on hover!
+                    y=opt_y + (self.height // 2),
+                    anchor_x='left', anchor_y='center', color=self.text_color,
+                    batch=self.batch, group=self.group
+                )
+                self.labels.append(opt_label)
+
+    def check_hit(self, x, y, bx, by, bw, bh):
+        """Helper matrix bounds calculation."""
+        return bx <= x <= bx + bw and by <= y <= by + bh
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        # Clicked main header bar
+        if self.check_hit(x, y, self.x, self.y, self.width, self.height):
+            self.is_open = not self.is_open
+            self.update_graphics()
+            return True # Consume event
+            
+        # Clicked an item inside the extended list layout
+        if self.is_open:
+            for i in range(len(self.options)):
+                opt_y = self.y - ((i + 1) * self.height)
+                if self.check_hit(x, y, self.x, opt_y, self.width, self.height):
+                    self.selected_index = i
+                    self.is_open = False
+                    self.update_graphics()
+                    
+                    # Fire custom callback function immediately!
+                    if self.on_select:
+                        self.on_select(self.options[i])
+                    return True
+                    
+            # Clicked outside completely while open - close menu gracefully
+            self.is_open = False
+            self.update_graphics()
+            
+        return False
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        if not self.is_open:
+            return False
+            
+        previous_hover = self.hovered_index
+        self.hovered_index = -1
+        
+        # Check coordinates against tracking option boxes
+        for i in range(len(self.options)):
+            opt_y = self.y - ((i + 1) * self.height)
+            if self.check_hit(x, y, self.x, opt_y, self.width, self.height):
+                self.hovered_index = i
+                break
+                
+        # Only rebuild the batch calculations if hover state actually changed
+        if self.hovered_index != previous_hover:
+            self.update_graphics()
+            return True
+            
+        return False           

@@ -1,5 +1,5 @@
 import shelve
-import statistics
+import statistics, random
 import datetime
 from typing import Any
 
@@ -17,11 +17,17 @@ class SectorEightRecommendations:
     
     def get_recommended_item(self) -> str:
         items_bought = self.get_item_history()
+        
+        # 1. Fast-path check: If list is empty, avoid exception overhead entirely!
+        if not items_bought:
+            return random.choice(['Laser Boost', 'XP Speedups', 'Powerups', 'Invisibility', 'Extra Life'])
+            
         try:
-            recommended_item = statistics.mode(items_bought)
+            # 2. Return immediately on success to keep control flow dead simple
+            return statistics.mode(items_bought)
         except statistics.StatisticsError:
-            return "Laser Boost"
-        return recommended_item
+            # 3. Fallback if a statistics error somehow still occurs
+            return random.choice(['Laser Boost', 'XP Speedups', 'Powerups', 'Invisibility', 'Extra Life'])   
     
     def release_file(self):
         self.log_store.close()
