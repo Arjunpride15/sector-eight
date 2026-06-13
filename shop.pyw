@@ -52,6 +52,8 @@ def on_mouse_press(x, y, button, modifiers):
                 shop_instance.query()
             if shop_instance.history_button.is_clicked(x, y):
                 shop_instance.show_history()
+            if shop_instance.go_to_start_of_shop_btn.is_clicked(x, y):
+                shop_instance.smooth_go_to_start()
         else:
             if shop_instance.cross_button:
                 if shop_instance.cross_button.is_clicked(x, y):

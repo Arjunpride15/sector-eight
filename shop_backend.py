@@ -9,7 +9,7 @@ from canvas import NotImplementedWarning
 from typing import NamedTuple
 import random
 import tastyerrors
-import datetime
+import datetime, time
 from recommendations import SectorEightRecommendations, SectorEightHistory
 
 class ShopItem(NamedTuple):
@@ -129,7 +129,7 @@ class SectorEightShop:
         self.right_nav_btn = None
         self.miami_glitch_text = None
         self.bool_glitchy_text_visible = False
-        self.background = (0.2, 0.2, 0.35, 1.0)
+        self.background = self.data_storage.get('background', (0.2, 0.2, 0.35, 1))
         self.theme_dropdown = None
         self.theme_backgrounds = {
             'Dark+': (30/255, 30/255, 30/255, 1.0),
@@ -139,6 +139,7 @@ class SectorEightShop:
             'Light Sunset': (253/255, 230/255, 224/255, 1.0),
             'Neon Mania': (random.random(), random.random(), random.random(), 1.0)
         }
+        self.go_to_start_of_shop_btn = None
     def sync_data(self, name, var):
         self.data_storage[name] = var
         self.data_storage.sync()
@@ -175,6 +176,8 @@ class SectorEightShop:
             self.offset_x += move
             for sprite in self.scroll_objects:
                 sprite.x += move
+    def clock_compat_back_mouse_scroll(self, dt):
+        self.send_mouse_scroll(-10)
            
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
@@ -251,7 +254,16 @@ class SectorEightShop:
             
         )
         self.rec_obj.release_file() # Needed for the database to close properly.
-        
+    def smooth_go_to_start(self):
+        scroll_interval = 0.008
+        time_taken = (abs(self.offset_x)/20) * scroll_interval
+        try:
+            pyglet.clock.unschedule(self.clock_compat_back_mouse_scroll)
+        except Exception:
+            ...
+        pyglet.clock.schedule_interval_for_duration(self.clock_compat_back_mouse_scroll,
+                                                    scroll_interval, time_taken)
+            
     def make_option_buttons(self) -> None:
         self.home_button = utilities.Button('\U0001f3e1', 1390, self.pellet_label.y - 25, 60, 50, 
                                             self.interface, (78, 205, 196), 25, self.emoji_font)
@@ -262,7 +274,8 @@ class SectorEightShop:
         self.history_button = utilities.Button("\U000023F3", 1320, self.pellet_label.y - 25, 60, 50,
                                                self.interface, (0, 229, 255, 255), 25, self.emoji_font)
         
-       
+        self.go_to_start_of_shop_btn = utilities.Button("\u23EE", 1250, self.pellet_label.y - 25, 60, 50,
+                                             self.interface, (0, 245, 255, 255), 25, self.emoji_font)
         
     def home(self):
         raise NotImplementedWarning('Home button clicked')
@@ -387,6 +400,7 @@ class SectorEightShop:
         self.show_history()
     def change_theme(self, theme):
         self.background = self.theme_backgrounds[theme]
+        self.sync_data('background', self.background)
         if 'Light' in theme:
              self.info_label = pyglet.text.Label('Shop | Sector Eight',
                                             font_name="Merriweather Sans",
@@ -443,12 +457,18 @@ class SectorEightShop:
         self.add_scrolllist(self.badge_list)
         self.add_scrolllist(self.rec_badge)    
         self.make_option_buttons()
+        for index in range(len(list(self.theme_backgrounds.keys()))):
+            bg = list(self.theme_backgrounds.values())[index]
+            if bg == self.background:
+                break
+        else: # No matching color found!
+            index = list(self.theme_backgrounds.keys()).index('Neon Mania')
         self.theme_dropdown = utilities.DropDownMenu(self.WINDOW, self.history_button.x - 10, 
                                                      self.pellet_label.y - 100,
                                                      400, 40, list(self.theme_backgrounds.keys()), 
                                                      batch=self.interface, 
                                                      on_select=self.change_theme, accent_color=(150, 150, 150, 255),
-                                                     default_index=2)
+                                                     default_index=index)
         self.translucent_layer = pyglet.shapes.Rectangle(x=0, y=0, width=self.WINDOW.width, height=self.WINDOW.height, 
                                                          color=(0, 0, 0), batch=self.interface)
         self.translucent_layer.opacity = 0
