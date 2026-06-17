@@ -256,7 +256,7 @@ class SectorEightShop:
         self.rec_obj.release_file() # Needed for the database to close properly.
     def smooth_go_to_start(self):
         scroll_interval = 0.008
-        time_taken = (abs(self.offset_x)/20) * scroll_interval
+        time_taken = ((abs(self.offset_x)/20) + (scroll_interval * 2)) * scroll_interval
         try:
             pyglet.clock.unschedule(self.clock_compat_back_mouse_scroll)
         except Exception:

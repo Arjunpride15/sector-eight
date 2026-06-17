@@ -781,7 +781,7 @@ class SectorEight:
         if not self.game_active:
             return
 
-        if self.ghost_lives == 0 or (self.food_dict == {} and self.pellets > self.ghost_pellets):
+        if self.ghost_lives == 0:
             self.game_active = False
             self.game_paused = True
             self.you_won()
@@ -821,7 +821,7 @@ class SectorEight:
         pyglet.clock.schedule_interval(self.update, 1/60.0)
         pyglet.clock.schedule_interval(self.ghost_update, 1/60.0)
         pyglet.clock.schedule_interval(self.fire_laser, 2.0)
-        pyglet.clock.schedule_interval(self.change_personality, 30.0)
+        pyglet.clock.schedule_interval(self.change_personality, 10)
         pyglet.clock.schedule_interval(self.blit_random_coin, 30)
         pyglet.clock.schedule_interval(self.check_state, 1/60)
         self.play_main_music_file(self)
