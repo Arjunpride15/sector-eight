@@ -71,7 +71,7 @@ class Button:
                 self.shape.set_opacity(200)
         except IndexError:
             pass
-
+        self.text_color = text_color
         # The text label centered on the button
         self.label = pyglet.text.Label(
             text,
@@ -99,7 +99,7 @@ class Button:
         opacity = 200 if visible else 0
         text_opacity = 255 if visible else 0
         self.shape.set_opacity(opacity)
-        self.label.color = (255, 255, 255, text_opacity)
+        self.label.color = tuple([*self.text_color, text_opacity])
 
     def delete(self):
         """
