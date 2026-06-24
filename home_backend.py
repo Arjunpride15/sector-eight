@@ -12,7 +12,6 @@ import tastyerrors
 import datetime, time
 import pyglet.shapes
 
-
 class SectorEightHome:
     def __init__(self, window):
         self.window = window
@@ -41,11 +40,19 @@ class SectorEightHome:
         self.user_img = None
         self.user_label = None
         self.side_panel_user_ui = list()
-        self.account_settings_button = None
+        self.settings_button = None
         self.shop_btn = None
         self.game_btn = None
         self.query_btn = None
         self.logout_btn = None
+        self.cyclic_badge = None
+        self.badge_1 = None
+        self.badge_2 = None
+        self.badge_3 = None
+        self.badge_4 = None
+        self.cyclic_state_list = None
+        self.left_nav_btn = None
+        self.right_nav_btn = None
         
     def sync_data(self, name, var):
         self.data_storage[name] = var
@@ -84,21 +91,25 @@ class SectorEightHome:
         self.welcome_label.x = 270
         for item in self.side_panel_user_ui:
             item.opacity = 255
-        self.account_settings_button.set_visible(True)
+        self.settings_button.set_visible(True)
         self.shop_btn.set_visible(True)
         self.game_btn.set_visible(True)
         self.query_btn.set_visible(True)
         self.logout_btn.set_visible(True)
+        self.left_nav_btn.set_visible(False)
+        self.right_nav_btn.set_visible(False)
         
     def hide_side_panel(self):
         self.welcome_label.x = 100
         for item in self.side_panel_user_ui:
             item.opacity = 0
-        self.account_settings_button.set_visible(False)
+        self.settings_button.set_visible(False)
         self.shop_btn.set_visible(False)
         self.game_btn.set_visible(False)
         self.query_btn.set_visible(False)
         self.logout_btn.set_visible(False)
+        self.left_nav_btn.set_visible(True)
+        self.right_nav_btn.set_visible(True)
     def toggle_side_panel(self):
         if self.num_side_btn_clicked % 2 == 0:
             #print("Showing side panel")
@@ -146,18 +157,18 @@ class SectorEightHome:
                                             font_name=self.font_list, batch=self.interface, color=(255, 255, 255), 
                                             font_size=15)
         self.user_label.opacity = 0
-        self.account_settings_button = utilities.Button("Account Settings \u2699\ufe0f:", 
+        self.settings_button = utilities.Button("Settings \u2699\ufe0f", 
                                                         5, self.user_label.y - 60,
                                                         240, 40, self.interface, (20, 20, 25), text_color=(57, 255, 20),
                                                         font_size=14, radius=10)
         
-        self.account_settings_button.set_visible(False)
+        self.settings_button.set_visible(False)
         self.shop_btn = utilities.Button("Shop \U0001f6d2", 
-                                            5, self.account_settings_button.y - 60,
+                                            5, self.settings_button.y - 60,
                                             240, 40, self.interface, (24, 26, 46), text_color=(255, 50, 177),
                                             font_size=14, radius=10)
         self.shop_btn.set_visible(False)
-        self.game_btn = utilities.Button("Game \U0001f6d2", 
+        self.game_btn = utilities.Button("Game \U0001f3ae", 
                                             5, self.shop_btn.y - 60,
                                             240, 40, self.interface, (24, 26, 46), text_color=(0, 150, 255),
                                             font_size=14, radius=10)
@@ -172,7 +183,23 @@ class SectorEightHome:
                                             240, 40, self.interface, (24, 26, 46), text_color=(220, 53, 69),
                                             font_size=14, radius=10)
         self.logout_btn.set_visible(False)
+        self.cyclic_badge = utilities.CyclicBadge(4)
+        self.badge_1 = utilities.Badge(300, self.shop_btn.y - 200, 1000, 400, (32, 38, 68),
+                                       (0, 150, 180), (250, 250, 250), (0, 210, 225), "Action Badge: Shop",
+                                       "\U0001f6d2\ufe0f", "Launch \u2197", batch=self.interface)
+        self.badge_2 = utilities.Badge(300, self.shop_btn.y - 200, 1000, 400, (32, 38, 68),
+                                       (0, 150, 180), (250, 250, 250), (0, 210, 225), "Action Badge: Settings",
+                                       "\u2699\ufe0f", "Launch \u2197", batch=self.interface)
+        self.badge_3 = utilities.Badge(300, self.shop_btn.y - 200, 1000, 400, (32, 38, 68),
+                                       (0, 150, 180), (250, 250, 250), (0, 210, 225), "Action Badge: Help",
+                                       "\u2754\ufe0f", "Launch \u2197", batch=self.interface)
+        self.badge_4 = utilities.Badge(300, self.shop_btn.y - 200, 1000, 400, (32, 38, 68),
+                                       (0, 150, 180), (250, 250, 250), (0, 210, 225), "Action Badge: Game",
+                                       "\U0001f3ae\ufe0f", "Launch \u2197", batch=self.interface)
+        self.left_nav_btn = utilities.Button("\U0000276E", self.badge_1.x - 70, self.badge_1.y + 200, 50, 50, self.interface, (255, 215, 0), 25)
+        self.right_nav_btn = utilities.Button("\U0000276F", self.badge_1.x + self.badge_1.width + 30, self.badge_1.y + 200, 50, 50, self.interface, (255, 215, 0), 25)
         self.add_multiple_elements(self.side_panel_user_ui, self.user_img, self.user_label)
+        
         
         
     def update(self, dt):
@@ -180,6 +207,15 @@ class SectorEightHome:
             self.pellet_label.x = 83 + self.welcome_label.x + 200
             self.vruler.x = self.vruler.x2 = self.welcome_label.x - 20
             self.ruler.y = self.ruler.y2 = self.welcome_label.y - 20
+            try:
+                self.cyclic_state_list = self.cyclic_badge.cyclic_list
+                self.badge_1.set_visible(self.cyclic_state_list[0])
+                self.badge_2.set_visible(self.cyclic_state_list[1])
+                self.badge_3.set_visible(self.cyclic_state_list[2])
+                self.badge_4.set_visible(self.cyclic_state_list[3])
+            except AttributeError:
+                ...
+        
         
     def start(self):
         self.play()

@@ -209,6 +209,29 @@ class Badge:
         """Detects if the mouse clicked the BUTTON area specifically"""
         return (self.btn_bg.x <= mouse_x <= self.btn_bg.x + self.btn_bg.width and
                 self.btn_bg.y <= mouse_y <= self.btn_bg.y + self.btn_bg.height)
+    
+    def set_visible(self, visibility):
+        if visibility == False:
+            self.bg.opacity = 0
+            self.title.opacity = 0
+            self.emoji_label.opacity = 0
+            try:
+                self.desc.opacity = 0
+            except AttributeError:
+                ...
+            self.btn_bg.opacity = 0
+            self.btn_text.opacity = 0
+        elif visibility == True:
+            self.bg.opacity = 255
+            self.title.opacity = 255
+            self.emoji_label.opacity = 255
+            try:
+                self.desc.opacity = 255
+            except AttributeError:
+                ...
+            self.btn_bg.opacity = 255
+            self.btn_text.opacity = 255
+                    
 
 class MiamiGlitchLabel:
     """
@@ -570,4 +593,27 @@ class DropDownMenu:
             self.update_graphics()
             return True
             
-        return False           
+        return False
+
+class CyclicBadge:
+    def __init__(self, num_elements):
+        self.num_elements = num_elements
+        self.cyclic_list = list()
+        self.cyclic_list = [False] * self.num_elements
+        self.cyclic_list[0] = True
+        self.current_index = 0
+        pyglet.clock.schedule_interval(self.auto_swipe, 7.0)
+    
+    def go_left(self):
+        self.cyclic_list[self.current_index] = False
+        self.current_index = (self.current_index - 1) % self.num_elements
+        self.cyclic_list[self.current_index] = True
+
+    def go_right(self):
+        self.cyclic_list[self.current_index] = False
+        self.current_index = (self.current_index + 1) % self.num_elements
+        self.cyclic_list[self.current_index] = True
+    
+    def auto_swipe(self, dt):
+        self.go_right()
+               

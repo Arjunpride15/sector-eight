@@ -19,8 +19,16 @@ def on_draw():
 @window.event
 def on_mouse_press(x, y, button, modifiers):
     if button == mouse.LEFT:
-        if home_obj.side_panel_btn.is_clicked(x, y):
-            home_obj.toggle_side_panel()
+        if home_obj.side_panel_btn != None:
+            if home_obj.side_panel_btn.is_clicked(x, y):
+                home_obj.toggle_side_panel()
+        if home_obj.cyclic_badge != None:
+            if home_obj.left_nav_btn:
+                if home_obj.left_nav_btn.is_clicked(x, y):
+                    home_obj.cyclic_badge.go_left()
+            if home_obj.right_nav_btn:
+                if home_obj.right_nav_btn.is_clicked(x, y):
+                    home_obj.cyclic_badge.go_right()
 @window.event
 def on_close():
     home_obj.stop_music()
