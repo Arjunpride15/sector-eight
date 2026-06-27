@@ -803,18 +803,19 @@ class SectorEight:
             self.translucent_layer.color = (255, 20, 60) # Red
             pyglet.clock.unschedule(self.update)
             pyglet.clock.unschedule(self.ghost_update)
-        if self.eater_sprite.x < 0 or self.eater_sprite.x > self.WINDOW.width:
-            self.eater_sprite.x = 400
-            self.eater_sprite.y = 400
-        elif self.eater_sprite.y < 0 or self.eater_sprite.y > self.WINDOW.height:
-            self.eater_sprite.x = 400
-            self.eater_sprite.y = 400
-        elif self.ghost_sprite.x < 0 or self.ghost_sprite.x > self.WINDOW.width:
-            self.ghost_sprite.x = 450
-            self.ghost_sprite.y = 400
-        elif self.ghost_sprite.y < 0 or self.ghost_sprite.y > self.WINDOW.height:
-            self.ghost_sprite.x = 450
-            self.ghost_sprite.y = 400
+        if self.eater_sprite and self.ghost_sprite:
+            if self.eater_sprite.x < 0 or self.eater_sprite.x > self.WINDOW.width:
+                self.eater_sprite.x = 400
+                self.eater_sprite.y = 400
+            elif self.eater_sprite.y < 0 or self.eater_sprite.y > self.WINDOW.height:
+                self.eater_sprite.x = 400
+                self.eater_sprite.y = 400
+            elif self.ghost_sprite.x < 0 or self.ghost_sprite.x > self.WINDOW.width:
+                self.ghost_sprite.x = 450
+                self.ghost_sprite.y = 400
+            elif self.ghost_sprite.y < 0 or self.ghost_sprite.y > self.WINDOW.height:
+                self.ghost_sprite.x = 450
+                self.ghost_sprite.y = 400
     def restart_game(self):
         self.data_store.close()
         Popen(["restart.cmd"])
