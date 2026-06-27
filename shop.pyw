@@ -113,6 +113,8 @@ def on_close():
     # Safely close the shelf to save data
     if hasattr(shop_instance, 'data_storage'):
         shop_instance.data_storage.close()
+    if hasattr(shop_instance, "log_file"):
+        shop_instance.log_file.close()
     
     # Close the window
     window.close()

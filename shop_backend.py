@@ -250,7 +250,7 @@ class SectorEightShop:
             width=1000, height=self.ruler_y, bg_color=item.bg_color, 
             btn_color=(150, 200, 150, 225), emoji_color=(200, 200, 200), main_text_color=(0, 0, 0, 225),
             main_text=item.item_name, emoji="\U0001F4AF", 
-            btn_text=f"Offer: Buy now for {item.item_price - self.item_discount}P", bob=True, batch=self.interface
+            btn_text=f"Offer: Buy now for {item.item_price - self.item_discount}P", batch=self.interface
             
         )
         self.rec_obj.release_file() # Needed for the database to close properly.
@@ -429,14 +429,14 @@ class SectorEightShop:
                 item_badge = utilities.Badge(
                     self.vr1.x + 20,
                     0, 800, self.ruler_y, item.bg_color, (150, 200, 150, 225), (200, 200, 200), (0, 0, 0, 225),
-                    item.item_name, item.item_esc_char, f"Buy for {item.item_price}P", bob=True, batch=self.interface
+                    item.item_name, item.item_esc_char, f"Buy for {item.item_price}P", batch=self.interface
                 )
                 self.badge_list.append(item_badge)
             elif i != 0:
                 item_badge = utilities.Badge(
                     self.badge_list[i - 1].x + 900,
                     0, 800, self.ruler_y, item.bg_color, (150, 200, 150, 225), (200, 200, 200), (0, 0, 0, 225),
-                    item.item_name, item.item_esc_char, f"Buy for {item.item_price}P", bob=True, batch=self.interface
+                    item.item_name, item.item_esc_char, f"Buy for {item.item_price}P", batch=self.interface
                 )
                 self.badge_list.append(item_badge)
         self.vr2.x = self.vr2.x2 = (self.badge_list[-1].x) + (self.badge_list[-1].width) + 100

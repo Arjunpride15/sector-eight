@@ -277,7 +277,7 @@ class SectorEight:
     def invisible_power(self):
         if self.invisible_powers >= 1:
             self.invisible_on()
-            pyglet.clock.schedule_once(self.invisible_off, 45.0)
+            pyglet.clock.schedule_once(self.invisible_off, 29)
             self.invisible_powers = self.invisible_powers - 1
             self.invisible_power_label.text = f'Invisible Power: {self.invisible_powers}'
             self.play(music_file=self.confObj.toml_dict['music']['invisibleEffect'])
@@ -498,7 +498,7 @@ class SectorEight:
     def ghost_invisible_power(self):
         if self.ghost_invisible_powers >= 1:
             self.ghost_invisible_on()
-            pyglet.clock.schedule_once(self.ghost_invisible_off, 45.0)
+            pyglet.clock.schedule_once(self.ghost_invisible_off, 29)
             self.ghost_invisible_powers = self.ghost_invisible_powers - 1
             
             self.play(music_file=self.confObj.toml_dict['music']['invisibleEffect'])
@@ -674,7 +674,8 @@ class SectorEight:
             if dist_to_player > 400:
                 self.ghost_direction = (0, 0) # Stop in a 'box'
                 if not self.ghost_invisibility and self.ghost_invisible_powers >= 1:
-                    self.ghost_invisible_power()
+                    if random.choice([False, True]):
+                        self.ghost_invisible_power()
             else:
                 # 3. Sudden Strike: If player approaches, activate movement 
                 if self.ghost_direction == (0, 0):
@@ -682,7 +683,8 @@ class SectorEight:
                 
                 # Use Powerups to surprise the player 
                 if not self.ghost_bool_powerup and self.ghost_powerups >= 1:
-                    self.ghost_powerup()
+                    if random.choice([False, True]):
+                        self.ghost_powerup()
 
             # 4. Sudden Laser Detection 
             # Ambusher has a slightly wider detection window for 'sudden' firing
@@ -801,6 +803,18 @@ class SectorEight:
             self.translucent_layer.color = (255, 20, 60) # Red
             pyglet.clock.unschedule(self.update)
             pyglet.clock.unschedule(self.ghost_update)
+        if self.eater_sprite.x < 0 or self.eater_sprite.x > self.WINDOW.width:
+            self.eater_sprite.x = 400
+            self.eater_sprite.y = 400
+        elif self.eater_sprite.y < 0 or self.eater_sprite.y > self.WINDOW.height:
+            self.eater_sprite.x = 400
+            self.eater_sprite.y = 400
+        elif self.ghost_sprite.x < 0 or self.ghost_sprite.x > self.WINDOW.width:
+            self.ghost_sprite.x = 450
+            self.ghost_sprite.y = 400
+        elif self.ghost_sprite.y < 0 or self.ghost_sprite.y > self.WINDOW.height:
+            self.ghost_sprite.x = 450
+            self.ghost_sprite.y = 400
     def restart_game(self):
         self.data_store.close()
         Popen(["restart.cmd"])

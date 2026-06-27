@@ -17,6 +17,8 @@ class SectorEightHome:
         self.window = window
         self.scroll_objects = list()
         self.interface = pyglet.graphics.Batch()
+        self.mask_interface = pyglet.graphics.Batch()
+        self.header_interface = pyglet.graphics.Batch()
         self.configObj = conf.Config()
         pyglet.options['search_local_libs'] = True
         pyglet.font.add_file('fonts/OpenSans-Regular.ttf')
@@ -53,6 +55,16 @@ class SectorEightHome:
         self.cyclic_state_list = None
         self.left_nav_btn = None
         self.right_nav_btn = None
+        self.offset_y = 0
+        self.min_scroll = 0
+        self.max_scroll = 1000
+        self.type_checklist = (pyglet.text.Label, 
+                               pyglet.sprite.Sprite, 
+                               pyglet.shapes.Line, 
+                               utilities.Badge)
+        self.main_view = True
+        self.mask_rect = None
+        
         
     def sync_data(self, name, var):
         self.data_storage[name] = var
@@ -119,17 +131,28 @@ class SectorEightHome:
             #print("Hiding side panel")
             self.hide_side_panel()
             self.num_side_btn_clicked += 1
+    
+    def add_scrolllist(self, element):
+        if isinstance(element, self.type_checklist):
+            self.scroll_objects.append(element)
+        elif isinstance(element, list):
+            for item in element:
+                self.scroll_objects.append(item)
+        else:
+            raise tastyerrors.BadType(f'''Invalid argument("element") passed to home_backend.SectorEightHome.add_scrollist; 
+                                      argument passed was {element}''')
     def init_window(self):
         pyglet.clock.schedule_interval_for_duration(self.show_loading_screen, 1/60, 2.4)
         pyglet.clock.schedule_once(self.hide_loading_screen, 2.4)
     
     def main_init_window(self):
+        
         self.welcome_label = pyglet.text.Label(f'Welcome, {self.user}!', 
                                               font_name="Open Sans", 
                                               font_size=20,
                                               x=100, 
                                               y=740, 
-                                              batch=self.interface, 
+                                              batch=self.header_interface, 
                                               color=(255, 255, 255, 255))
         
         self.pellet_label = pyglet.text.Label(f'\N{COIN}: {self.pellets}', 
@@ -137,18 +160,23 @@ class SectorEightHome:
                                               font_size=20,
                                               x=83 + self.welcome_label.x + 200, 
                                               y=740, 
-                                              batch=self.interface, 
+                                              batch=self.header_interface, 
                                               color=(253, 189, 1, 255))
         vruler_x = self.welcome_label.x - 20
         self.vruler = pyglet.shapes.Line(x=vruler_x, y=0,
                                          x2=vruler_x, y2=self.window.height,
-                                         thickness=1.6, color=(255, 255, 255, 255), batch=self.interface)
+                                         thickness=1.6, color=(255, 255, 255, 255), batch=self.header_interface)
         ruler_y = self.welcome_label.y - 20
         self.ruler = pyglet.shapes.Line(x=0, y=ruler_y, x2=self.window.width, y2=ruler_y,
-                                        thickness=1.6, color=(255, 255, 255, 255), batch=self.interface)
+                                        thickness=1.6, color=(255, 255, 255, 255), batch=self.header_interface)
         
-        self.side_panel_btn = utilities.Button("\u2630", 10, self.ruler.y + 20, 50, 50, self.interface,
+        self.side_panel_btn = utilities.Button("\u2630", 10, self.ruler.y + 20, 50, 50, self.header_interface,
                                                self.background, font_name="Open Sans", font_size=35)
+        self.mask_rect = pyglet.shapes.Rectangle(
+            x=0, y=ruler_y, width=self.window.width, height=self.window.width - ruler_y,
+            color=self.background, batch=self.mask_interface
+        )
+        
         self.user_img = pyglet.sprite.Sprite(pyglet.resource.image("images/user.png"), x=50.0, y=self.ruler.y - 130,
                                              batch=self.interface)
         self.user_img.opacity = 0
@@ -196,9 +224,17 @@ class SectorEightHome:
         self.badge_4 = utilities.Badge(300, self.shop_btn.y - 200, 1000, 400, (32, 38, 68),
                                        (0, 150, 180), (250, 250, 250), (0, 210, 225), "Action Badge: Game",
                                        "\U0001f3ae\ufe0f", "Launch \u2197", batch=self.interface)
-        self.left_nav_btn = utilities.Button("\U0000276E", self.badge_1.x - 70, self.badge_1.y + 200, 50, 50, self.interface, (255, 215, 0), 25)
-        self.right_nav_btn = utilities.Button("\U0000276F", self.badge_1.x + self.badge_1.width + 30, self.badge_1.y + 200, 50, 50, self.interface, (255, 215, 0), 25)
+        self.left_nav_btn = utilities.Button("\U0000276E", self.badge_1.x - 70, 
+                                             self.badge_1.y + 200, 50, 50, self.interface, (255, 215, 0), 25)
+        self.right_nav_btn = utilities.Button("\U0000276F", self.badge_1.x + self.badge_1.width + 30, 
+                                              self.badge_1.y + 200, 50, 50, self.interface, (255, 215, 0), 25)
         self.add_multiple_elements(self.side_panel_user_ui, self.user_img, self.user_label)
+        self.add_scrolllist([self.badge_1,
+                             self.badge_2,
+                             self.badge_3,
+                             self.badge_4,
+                             self.left_nav_btn,
+                             self.right_nav_btn,])
         
         
         

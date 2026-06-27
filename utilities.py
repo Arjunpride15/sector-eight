@@ -55,14 +55,14 @@ class Button:
         """
         A simple reusable button for Pyglet.
         """
-        self.x = x
-        self.y = y
+        self._x = x
+        self._y = y
         self.width = width
         self.height = height
         
         # The background of the button
         self.shape = RoundedRectangle(
-            x, y, width, height, radius, color=colour, batch=batch
+            self._x, self._y, width, height, radius, color=colour, batch=batch
         )
         try:
             if colour[3]:
@@ -77,20 +77,40 @@ class Button:
             text,
             font_name=font_name,
             font_size=font_size,
-            x=x + (width // 2),
-            y=y + (height // 2),
+            x=self._x + (width // 2),
+            y=self._y + (height // 2),
             anchor_x='center',
             anchor_y='center',
             color=text_color,
             batch=batch
         )
+    @property
+    def x(self):
+        return self._x
 
-    def is_clicked(self, mouse_x, mouse_y):
-        """
-        Checks if a mouse click coordinate falls within the button's rectangle.
-        """
-        return (self.x <= mouse_x <= self.x + self.width and
-                self.y <= mouse_y <= self.y + self.height)
+    @x.setter
+    def x(self, value):
+        dx = value - self._x
+        self._x = value
+        for s in self.shape.shapes:
+            s.x += dx
+        self.label.x += dx
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        dy = value - self._y
+        self._y = value
+        for s in self.shape.shapes:
+            s.y += dy
+        self.label.y += dy
+
+    def is_clicked(self, cx, cy):
+        # Now uses the live properties dynamically!
+        return self.x <= cx <= self.x + self.width and self.y <= cy <= self.y + self.height
 
     def set_visible(self, visible):
         """
@@ -99,7 +119,10 @@ class Button:
         opacity = 200 if visible else 0
         text_opacity = 255 if visible else 0
         self.shape.set_opacity(opacity)
-        self.label.color = tuple([*self.text_color, text_opacity])
+        if visible:
+            self.label.opacity = 255
+        else:
+            self.label.opacity = 0
 
     def delete(self):
         """
@@ -163,7 +186,6 @@ class Badge:
                                            anchor_x='center', anchor_y='center',
                                            batch=batch)
 
-    # Property for X: Moves ALL sub-elements when badge.x is changed
     @property
     def x(self):
         return self._x
@@ -176,11 +198,9 @@ class Badge:
         self.title.x += dx
         self.emoji_label.x += dx
         self.btn_bg.x += dx
-        self.btn_text.x += dx
         if self.desc:
             self.desc.x += dx
 
-    # Property for Y: Used for the bobbing animation
     @property
     def y(self):
         return self._y
@@ -189,14 +209,23 @@ class Badge:
     def y(self, value):
         dy = value - self._y
         self._y = value
+        
+        # Also move the base_y so the bobbing animation works with scroll
+        self.base_y += dy
+        
+        # Shift main badge background
         self.bg.y += dy
+        
+        # Shift text labels
         self.title.y += dy
         self.emoji_label.y += dy
+        
+        # Shift the raw Pyglet shapes directly!
         self.btn_bg.y += dy
         self.btn_text.y += dy
+        
         if self.desc:
             self.desc.y += dy
-
     def update(self, dt):
         """Call this in your shop's update loop if bob=True"""
         if self.bob:
@@ -205,10 +234,11 @@ class Badge:
             new_y = self.base_y + math.sin(self.time * 3) * 8
             self.y = new_y
 
-    def is_clicked(self, mouse_x, mouse_y):
-        """Detects if the mouse clicked the BUTTON area specifically"""
-        return (self.btn_bg.x <= mouse_x <= self.btn_bg.x + self.btn_bg.width and
-                self.btn_bg.y <= mouse_y <= self.btn_bg.y + self.btn_bg.height)
+    def is_clicked(self, cx, cy):
+        # The badge only passes click handling if the player clicked its button area
+        if self.visible:
+            return self.btn_bg.is_clicked(cx, cy)
+        return False
     
     def set_visible(self, visibility):
         if visibility == False:

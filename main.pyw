@@ -28,8 +28,7 @@ se = canvas.SectorEight(window)
     
 
 
-se.canvas_init()
-pyglet.clock.schedule_interval(se.play_main_music_file, 43)  
+se.canvas_init() 
 @window.event
 def on_draw():
     
