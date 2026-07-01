@@ -821,9 +821,10 @@ class SectorEight:
         self.data_store.close()
         Popen(["restart.cmd"])
     def open_home(self):
-        raise NotImplementedWarning('Home Button Clicked')
+        self.data_store.close()
+        Popen(["unilaunch.cmd", "-gh"])
     def open_shop(self):
-        Popen(["shop_launch.cmd"])
+        Popen(["unilaunch.cmd", "-gs"])
     def open_query(self):
         raise NotImplementedWarning('Query Button Clicked')
     def start_(self):

@@ -11,7 +11,11 @@ import random
 import tastyerrors
 import datetime, time
 import pyglet.shapes
+from daily_rewards import DailyRewards
 
+class DailyRewardItem(NamedTuple):
+    name: str
+    max_count: int
 class SectorEightHome:
     def __init__(self, window):
         self.window = window
@@ -64,7 +68,19 @@ class SectorEightHome:
                                utilities.Badge)
         self.main_view = True
         self.mask_rect = None
-        
+        self.side_panel_visible = False
+        self.reward_bool = False
+        self.reward_obj = DailyRewards()
+        self.all_rewards = [DailyRewardItem("Pellets", 100),
+                            DailyRewardItem("Laser Boost", 10),
+                            DailyRewardItem("XP Speedups", 10),
+                            DailyRewardItem("Powerups", 20),
+                            DailyRewardItem("Invisibility", 5),
+                            DailyRewardItem("Extra Lives", 5)]
+        self.reward_of_the_day = random.choice(self.all_rewards)
+        self.name_of_reward = self.reward_of_the_day.name
+        self.num_reward = random.randint(2, self.reward_of_the_day.max_count)
+        self.reward_badge = None
         
     def sync_data(self, name, var):
         self.data_storage[name] = var
@@ -110,6 +126,7 @@ class SectorEightHome:
         self.logout_btn.set_visible(True)
         self.left_nav_btn.set_visible(False)
         self.right_nav_btn.set_visible(False)
+        self.side_panel_visible = True
         
     def hide_side_panel(self):
         self.welcome_label.x = 100
@@ -122,6 +139,7 @@ class SectorEightHome:
         self.logout_btn.set_visible(False)
         self.left_nav_btn.set_visible(True)
         self.right_nav_btn.set_visible(True)
+        self.side_panel_visible = False
     def toggle_side_panel(self):
         if self.num_side_btn_clicked % 2 == 0:
             #print("Showing side panel")
@@ -141,6 +159,13 @@ class SectorEightHome:
         else:
             raise tastyerrors.BadType(f'''Invalid argument("element") passed to home_backend.SectorEightHome.add_scrollist; 
                                       argument passed was {element}''')
+    
+    def shop(self):
+        Popen(["unilaunch.cmd", "-hs"])
+    def game(self):
+        Popen(["unilaunch.cmd", "-hg"])
+    def query(self):
+        ...        
     def init_window(self):
         pyglet.clock.schedule_interval_for_duration(self.show_loading_screen, 1/60, 2.4)
         pyglet.clock.schedule_once(self.hide_loading_screen, 2.4)
@@ -228,13 +253,19 @@ class SectorEightHome:
                                              self.badge_1.y + 200, 50, 50, self.interface, (255, 215, 0), 25)
         self.right_nav_btn = utilities.Button("\U0000276F", self.badge_1.x + self.badge_1.width + 30, 
                                               self.badge_1.y + 200, 50, 50, self.interface, (255, 215, 0), 25)
+        self.reward_badge = utilities.Badge(self.badge_4.x, self.badge_4.y - 500, 1000, 400, (255, 0, 127), 
+                                            (10, 10, 12), (0, 0, 0, 255), (15, 20, 14), 
+                                            f"Daily Reward: {self.num_reward} {self.name_of_reward}s",
+                                            "\U0001f451", "CLAIM", batch=self.interface)
+        
         self.add_multiple_elements(self.side_panel_user_ui, self.user_img, self.user_label)
         self.add_scrolllist([self.badge_1,
                              self.badge_2,
                              self.badge_3,
                              self.badge_4,
                              self.left_nav_btn,
-                             self.right_nav_btn,])
+                             self.right_nav_btn,
+                             self.reward_badge,])
         
         
         
@@ -251,6 +282,13 @@ class SectorEightHome:
                 self.badge_4.set_visible(self.cyclic_state_list[3])
             except AttributeError:
                 ...
+            self.reward_bool = self.reward_obj.is_daily_reward_pending()
+            #print(self.reward_bool)
+            if self.reward_bool:
+                self.reward_badge.btn_text.text = "CLAIM"
+            else:
+                self.reward_badge.btn_text.text = "CLAIMED"
+                self.reward_badge.bg.color = (140, 0, 12)
         
         
     def start(self):

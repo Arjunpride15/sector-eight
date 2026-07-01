@@ -185,6 +185,7 @@ class Badge:
                                            x=x + width // 2, y=y + 15 + (btn_h // 2),
                                            anchor_x='center', anchor_y='center',
                                            batch=batch)
+        self.visible = True
 
     @property
     def x(self):
@@ -198,6 +199,7 @@ class Badge:
         self.title.x += dx
         self.emoji_label.x += dx
         self.btn_bg.x += dx
+        self.btn_text.x += dx
         if self.desc:
             self.desc.x += dx
 
@@ -231,14 +233,14 @@ class Badge:
         if self.bob:
             self.time += dt
             # Calculate a smooth sine wave for the hover effect
-            new_y = self.base_y + math.sin(self.time * 3) * 8
+            new_y = self.base_y + math.sin(self.time * 3)
             self.y = new_y
 
-    def is_clicked(self, cx, cy):
+    def is_clicked(self, mouse_x, mouse_y):
         # The badge only passes click handling if the player clicked its button area
         if self.visible:
-            return self.btn_bg.is_clicked(cx, cy)
-        return False
+            return (self.btn_bg.x <= mouse_x <= self.btn_bg.x + self.btn_bg.width and
+                self.btn_bg.y <= mouse_y <= self.btn_bg.y + self.btn_bg.height)
     
     def set_visible(self, visibility):
         if visibility == False:
@@ -251,6 +253,7 @@ class Badge:
                 ...
             self.btn_bg.opacity = 0
             self.btn_text.opacity = 0
+            self.visible = False
         elif visibility == True:
             self.bg.opacity = 255
             self.title.opacity = 255
@@ -261,6 +264,7 @@ class Badge:
                 ...
             self.btn_bg.opacity = 255
             self.btn_text.opacity = 255
+            self.visible = True
                     
 
 class MiamiGlitchLabel:

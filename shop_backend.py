@@ -278,10 +278,10 @@ class SectorEightShop:
                                              self.interface, (0, 245, 255, 255), 25, self.emoji_font)
         
     def home(self):
-        raise NotImplementedWarning('Home button clicked')
+        Popen(["unilaunch.cmd", "-sh"])
     
     def game(self):
-        raise NotImplementedWarning('Game button clicked')
+        Popen(["unilaunch.cmd", "-sg"])
     
     def query(self):
         raise NotImplementedWarning('Query button clicked')
