@@ -16,6 +16,7 @@ from daily_rewards import DailyRewards
 class DailyRewardItem(NamedTuple):
     name: str
     max_count: int
+    shelve_name: str
 class SectorEightHome:
     def __init__(self, window):
         self.window = window
@@ -27,8 +28,9 @@ class SectorEightHome:
         pyglet.options['search_local_libs'] = True
         pyglet.font.add_file('fonts/OpenSans-Regular.ttf')
         self.main_items = list()
-        self.data_storage = shelve.open('data\\game_data')
+        self.data_storage = shelve.open(r'data\game_data')
         self.log_file = shelve.open(r"data\purchases")
+        
         self.pellets = self.data_storage.get('pellets', 0)
         self.music_switch = False
         self.loading_screen = pyglet.sprite.Sprite(img=pyglet.resource.image('images/loading.png'), 
@@ -71,16 +73,20 @@ class SectorEightHome:
         self.side_panel_visible = False
         self.reward_bool = False
         self.reward_obj = DailyRewards()
-        self.all_rewards = [DailyRewardItem("Pellets", 100),
-                            DailyRewardItem("Laser Boost", 10),
-                            DailyRewardItem("XP Speedups", 10),
-                            DailyRewardItem("Powerups", 20),
-                            DailyRewardItem("Invisibility", 5),
-                            DailyRewardItem("Extra Lives", 5)]
+        self.all_rewards = [DailyRewardItem("Pellets", 100, 'pellets'),
+                            DailyRewardItem("Laser Boosts", 10, 'laser'),
+                            DailyRewardItem("XP Speedups", 10, 'xp'),
+                            DailyRewardItem("Powerups", 20, 'powerups'),
+                            DailyRewardItem("Invisible Powers", 5, 'invisiblity'),
+                            DailyRewardItem("Extra Lives", 5, 'extra_lives')]
         self.reward_of_the_day = random.choice(self.all_rewards)
         self.name_of_reward = self.reward_of_the_day.name
         self.num_reward = random.randint(2, self.reward_of_the_day.max_count)
+        self.reward_of_the_day_key = self.reward_of_the_day.shelve_name
         self.reward_badge = None
+        self.err_reporting_label = None
+        self.issue_reporting_btn = None
+        self.feature_btn = None
         
     def sync_data(self, name, var):
         self.data_storage[name] = var
@@ -165,7 +171,13 @@ class SectorEightHome:
     def game(self):
         Popen(["unilaunch.cmd", "-hg"])
     def query(self):
-        ...        
+        ...
+    def reward_player(self):
+        var = self.data_storage.get(self.reward_of_the_day_key, 0)
+        var += self.num_reward
+        self.sync_data(self.reward_of_the_day_key, var)
+        self.pellets = self.data_storage.get('pellets', 0)
+        self.reward_obj.claim_reward()
     def init_window(self):
         pyglet.clock.schedule_interval_for_duration(self.show_loading_screen, 1/60, 2.4)
         pyglet.clock.schedule_once(self.hide_loading_screen, 2.4)
@@ -255,8 +267,19 @@ class SectorEightHome:
                                               self.badge_1.y + 200, 50, 50, self.interface, (255, 215, 0), 25)
         self.reward_badge = utilities.Badge(self.badge_4.x, self.badge_4.y - 500, 1000, 400, (255, 0, 127), 
                                             (10, 10, 12), (0, 0, 0, 255), (15, 20, 14), 
-                                            f"Daily Reward: {self.num_reward} {self.name_of_reward}s",
+                                            f"Daily Reward: {self.num_reward} {self.name_of_reward}",
                                             "\U0001f451", "CLAIM", batch=self.interface)
+        self.err_reporting_label = pyglet.text.Label("Issue Reporting \U0001f4e2", x=self.reward_badge.x,
+                                                     y=self.reward_badge.y - 100, font_name=self.font_list,
+                                                     batch=self.interface, color=(255, 200, 200), font_size=20)
+        self.issue_reporting_btn = utilities.Button("Report Issue \U00002716", x=self.err_reporting_label.x,
+                                                    y=self.err_reporting_label.y - 100 - 50, width=400, height=50,
+                                                    batch=self.interface, colour=(150, 150, 150),
+                                                    text_color=(255, 200, 200))
+        self.feature_btn = utilities.Button("Request a feature", x=self.issue_reporting_btn.x,
+                                                    y=self.issue_reporting_btn.y - 50 - 50, width=400, height=50,
+                                                    batch=self.interface, colour=(150, 150, 150),
+                                                    text_color=(0, 255, 200))
         
         self.add_multiple_elements(self.side_panel_user_ui, self.user_img, self.user_label)
         self.add_scrolllist([self.badge_1,
@@ -265,7 +288,10 @@ class SectorEightHome:
                              self.badge_4,
                              self.left_nav_btn,
                              self.right_nav_btn,
-                             self.reward_badge,])
+                             self.reward_badge,
+                             self.err_reporting_label,
+                             self.issue_reporting_btn,
+                             self.feature_btn])
         
         
         
@@ -274,6 +300,7 @@ class SectorEightHome:
             self.pellet_label.x = 83 + self.welcome_label.x + 200
             self.vruler.x = self.vruler.x2 = self.welcome_label.x - 20
             self.ruler.y = self.ruler.y2 = self.welcome_label.y - 20
+            self.pellet_label.text = f'\N{COIN}: {self.pellets}'
             try:
                 self.cyclic_state_list = self.cyclic_badge.cyclic_list
                 self.badge_1.set_visible(self.cyclic_state_list[0])
@@ -283,12 +310,14 @@ class SectorEightHome:
             except AttributeError:
                 ...
             self.reward_bool = self.reward_obj.is_daily_reward_pending()
+            #self.reward_bool = False
             #print(self.reward_bool)
             if self.reward_bool:
                 self.reward_badge.btn_text.text = "CLAIM"
             else:
                 self.reward_badge.btn_text.text = "CLAIMED"
                 self.reward_badge.bg.color = (140, 0, 12)
+                self.reward_badge.title.text = "Reward Of The Day"
         
         
     def start(self):

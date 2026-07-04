@@ -1,4 +1,4 @@
-import pyglet
+import pyglet, shelve, webbrowser
 from pyglet.window import key, mouse
 import home_backend
 
@@ -50,7 +50,16 @@ def on_mouse_press(x, y, button, modifiers):
                 home_obj.query()
             elif home_obj.cyclic_state_list[3] and home_obj.badge_4.is_clicked(x, y):
                 home_obj.game()     
-             
+        if home_obj.reward_badge != None:
+            if home_obj.reward_badge.is_clicked(x, y):
+                with shelve.open(r"data\miscn") as miscn:
+                    if not miscn["claimed"]:
+                        home_obj.reward_player() 
+        if home_obj.err_reporting_label:
+            if home_obj.issue_reporting_btn.is_clicked(x, y):
+                webbrowser.open_new_tab("https://github.com/Arjunpride15/sector-eight/issues/new?template=bug_report.md")
+            if home_obj.feature_btn.is_clicked(x, y):
+                webbrowser.open_new_tab("https://github.com/Arjunpride15/sector-eight/issues/new?template=feature_request.md")
 @window.event
 def on_mouse_scroll(x, y, scroll_x, scroll_y):
     if home_obj.main_view:

@@ -4,25 +4,46 @@ from datetime import datetime, timedelta
 class DailyRewards:
     def __init__(self):
         self.db = shelve.open("data\\miscn")
+        
         self.prev_time = self.db.get("last_opened", time.time())
-        self.current_time = self.db.get("current", time.time())
-        self.prev_obj = datetime.fromtimestamp(int(self.prev_time))
-        self.current_obj = datetime.fromtimestamp(int(self.current_time))
+        self.claimed_yet = self.db.get("claimed", False)
+        
         atexit.register(self.exit)
         pyglet.clock.schedule_interval(self.update, interval=0.5)
     
     def is_daily_reward_pending(self):
-        time_difference = self.current_obj - self.prev_obj
+        
+        current_time = self.db.get("current", time.time())
+        
+        
+        prev_obj = datetime.fromtimestamp(int(self.prev_time))
+        current_obj = datetime.fromtimestamp(int(current_time))
+        
+        time_difference = current_obj - prev_obj
         one_day = timedelta(days=1)
-        if time_difference < one_day:
-            return True
-        else:
+        
+        
+        if time_difference > one_day:
+            if self.claimed_yet:
+                self.claimed_yet = False
+                self.sync_data("claimed", False)
+        
+        return not self.claimed_yet
+        
+    def claim_reward(self):
+        if not self.is_daily_reward_pending():
             return False
+            
+        self.claimed_yet = True
+        self.sync_data("claimed", True)
+        return True
+        
     def sync_data(self, name, var):
         self.db[name] = var
         self.db.sync()
+        
     def update(self, dt):
         self.sync_data("current", time.time())
+        
     def exit(self):
         self.db.close()
-        
