@@ -784,7 +784,7 @@ class SectorEight:
         if not self.game_active:
             return
 
-        if self.ghost_lives == 0:
+        if self.ghost_lives == 0 or self.pellets == 0:
             self.game_active = False
             self.game_paused = True
             self.you_won()
