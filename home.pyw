@@ -21,6 +21,10 @@ def on_draw():
 @window.event
 def on_mouse_press(x, y, button, modifiers):
     if button == mouse.LEFT:
+        try:
+            home_obj.avatar_dropdown.on_mouse_press(x, y, button, modifiers)
+        except AttributeError:
+            ...
         if home_obj.side_panel_btn != None:
             if home_obj.side_panel_btn.is_clicked(x, y):
                 home_obj.toggle_side_panel()
@@ -60,6 +64,14 @@ def on_mouse_press(x, y, button, modifiers):
                 webbrowser.open_new_tab("https://github.com/Arjunpride15/sector-eight/issues/new?template=bug_report.md")
             if home_obj.feature_btn.is_clicked(x, y):
                 webbrowser.open_new_tab("https://github.com/Arjunpride15/sector-eight/issues/new?template=feature_request.md")
+
+@window.event
+def on_mouse_motion(x, y, dx, dy):
+    try:
+        home_obj.avatar_dropdown.on_mouse_motion(x, y, dx, dy)
+    except AttributeError:
+        ...
+    
 @window.event
 def on_mouse_scroll(x, y, scroll_x, scroll_y):
     if home_obj.main_view:

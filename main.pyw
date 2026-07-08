@@ -26,8 +26,6 @@ window = pyglet.window.Window(width=1600,height=850,caption="Sector 8")
 
 se = canvas.SectorEight(window)
     
-
-
 se.canvas_init() 
 @window.event
 def on_draw():

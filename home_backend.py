@@ -63,11 +63,13 @@ class SectorEightHome:
         self.right_nav_btn = None
         self.offset_y = 0
         self.min_scroll = 0
-        self.max_scroll = 1000
+        self.max_scroll = 10000
         self.type_checklist = (pyglet.text.Label, 
                                pyglet.sprite.Sprite, 
                                pyglet.shapes.Line, 
-                               utilities.Badge)
+                               utilities.Badge,
+                               utilities.DropDownMenu,
+                               utilities.Button)
         self.main_view = True
         self.mask_rect = None
         self.side_panel_visible = False
@@ -87,6 +89,35 @@ class SectorEightHome:
         self.err_reporting_label = None
         self.issue_reporting_btn = None
         self.feature_btn = None
+        self.avatar_tint = None
+        self.TINT_COLORS = {
+            "neon_green": (57, 255, 20),      # Classic matrix/laser green
+            "electric_cyan": (0, 255, 255),    # Vibrant arcade cyan
+            "cyber_pink": (255, 0, 127),      # Synthwave hot pink
+            "laser_red": (255, 7, 58),        # Intense electric neon red
+            "plasma_purple": (186, 85, 211),  # Rich arcade purple
+            "solar_yellow": (255, 234, 0),    # Ultra-bright toxic yellow
+            "sonic_blue": (0, 150, 255),      # Sharp, fast arcade blue
+            "proton_orange": (255, 103, 0),   # High-voltage neon orange
+            "mint_glitch": (0, 255, 163),     # Super bright seafoam/mint
+            "radioactive": (204, 255, 0),     # Bright lime/chartreuse
+            "blaze_magenta": (255, 0, 255),   # Pure vibrant fuchsia 
+            "phoenix_gold": (253, 189, 1),    # Deep rich golden token yellow
+            "hyper_aqua": (0, 245, 255),      # Ice-cold neon turquoise
+            "crimson_rush": (220, 53, 69),    # Deep punchy menu red
+            "prism_violet": (138, 43, 226)    # Deep neon blue-violet
+        }
+        self.AVATAR_DROPDOWN_COLORS = list()
+        for tint in self.TINT_COLORS.keys():
+            split_tint = tint.split("_")
+            try:
+                tint_name = f"{split_tint[0]} {split_tint[1]}"
+            except IndexError:
+                tint_name = tint
+            self.AVATAR_DROPDOWN_COLORS.append(tint_name.title())
+        self.avatar_dropdown = None
+        self.avatar_preview = None
+        
         
     def sync_data(self, name, var):
         self.data_storage[name] = var
@@ -123,6 +154,7 @@ class SectorEightHome:
     
     def show_side_panel(self):
         self.welcome_label.x = 270
+        self.avatar_tint.opacity = 100
         for item in self.side_panel_user_ui:
             item.opacity = 255
         self.settings_button.set_visible(True)
@@ -136,6 +168,7 @@ class SectorEightHome:
         
     def hide_side_panel(self):
         self.welcome_label.x = 100
+        self.avatar_tint.opacity = 0
         for item in self.side_panel_user_ui:
             item.opacity = 0
         self.settings_button.set_visible(False)
@@ -178,6 +211,19 @@ class SectorEightHome:
         self.sync_data(self.reward_of_the_day_key, var)
         self.pellets = self.data_storage.get('pellets', 0)
         self.reward_obj.claim_reward()
+        
+    def change_user_avatar_tint(self, color):
+        lowercase = color.lower()
+        split_color = lowercase.split(" ")
+        try:
+            color_key = f"{split_color[0]}_{split_color[1]}"
+        except IndexError:
+            color_key = lowercase
+        
+        required_rgb = self.TINT_COLORS.get(color_key, (0, 0, 0, 0)) # Defaults to no tint
+        self.avatar_tint.color = required_rgb
+        self.avatar_preview.color = required_rgb
+        self.avatar_tint.opacity = 0
     def init_window(self):
         pyglet.clock.schedule_interval_for_duration(self.show_loading_screen, 1/60, 2.4)
         pyglet.clock.schedule_once(self.hide_loading_screen, 2.4)
@@ -217,6 +263,13 @@ class SectorEightHome:
         self.user_img = pyglet.sprite.Sprite(pyglet.resource.image("images/user.png"), x=50.0, y=self.ruler.y - 130,
                                              batch=self.interface)
         self.user_img.opacity = 0
+        self.avatar_tint = pyglet.shapes.Rectangle(x=self.user_img.x, 
+                                                   y=self.user_img.y,
+                                                   width=100,
+                                                   height=100,
+                                                   color=(57, 255, 20,),
+                                                   batch=self.interface)
+        self.avatar_tint.opacity = 0
         
         self.user_label = pyglet.text.Label(self.user, self.user_img.x - 10, self.user_img.y - 35, 
                                             font_name=self.font_list, batch=self.interface, color=(255, 255, 255), 
@@ -280,6 +333,12 @@ class SectorEightHome:
                                                     y=self.issue_reporting_btn.y - 50 - 50, width=400, height=50,
                                                     batch=self.interface, colour=(150, 150, 150),
                                                     text_color=(0, 255, 200))
+        self.avatar_dropdown = utilities.DropDownMenu(self.window, self.feature_btn.x, self.feature_btn.y - 100,
+                                                      400, 40, self.AVATAR_DROPDOWN_COLORS, batch=self.interface,
+                                                      on_select=self.change_user_avatar_tint)
+        self.avatar_preview = pyglet.shapes.Rectangle(self.avatar_dropdown.x + self.avatar_dropdown.width + 100,
+                                                      self.avatar_dropdown.y,
+                                                      width=40, height=40, color=(57, 255, 20,), batch=self.interface)
         
         self.add_multiple_elements(self.side_panel_user_ui, self.user_img, self.user_label)
         self.add_scrolllist([self.badge_1,
@@ -291,7 +350,9 @@ class SectorEightHome:
                              self.reward_badge,
                              self.err_reporting_label,
                              self.issue_reporting_btn,
-                             self.feature_btn])
+                             self.feature_btn,
+                             self.avatar_dropdown,
+                             self.avatar_preview])
         
         
         

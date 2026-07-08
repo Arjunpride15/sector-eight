@@ -315,13 +315,14 @@ class SectorEight:
             # This matches how self.grid_pos is calculated in update()
             self.food_dict[(grid_x, grid_y)] = new_coin
     def update_labels(self):
-        # Update text of existing labels
-        self.pellet_label.text = f'Pellets: {self.pellets:,}'
-        self.laser_label.text = f'Laser Power: {self.laser_powers}'
-        self.xp_label.text = f'XP Speedups: {self.xp_speedups}'
-        self.powerup_label.text = f'Powerups: {self.powerups}'
-        self.invisible_power_label.text = f'Invisible Power: {self.invisible_powers}'
-        self.life_label.text = self.heart_symbol * self.user_display_lives   
+        if self.eater_sprite:
+            # Update text of existing labels
+            self.pellet_label.text = f'Pellets: {self.pellets:,}'
+            self.laser_label.text = f'Laser Power: {self.laser_powers}'
+            self.xp_label.text = f'XP Speedups: {self.xp_speedups}'
+            self.powerup_label.text = f'Powerups: {self.powerups}'
+            self.invisible_power_label.text = f'Invisible Power: {self.invisible_powers}'
+            self.life_label.text = self.heart_symbol * self.user_display_lives   
                 
           
                                    
@@ -832,8 +833,6 @@ class SectorEight:
         import pyglet.gl as gl
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-
-        self.canvas_init()
         self.change_personality(1)
         pyglet.clock.schedule_interval(self.update, 1/60.0)
         pyglet.clock.schedule_interval(self.ghost_update, 1/60.0)

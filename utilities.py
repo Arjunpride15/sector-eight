@@ -462,15 +462,15 @@ class MiamiGlitchLabel:
 class DropDownMenu:
     def __init__(self, window, x, y, width, height, options, default_index=0,
                  font_name=font_list, font_size=14,
-                 bg_color=(30, 30, 45, 255),       # Base background
-                 hover_color=(50, 50, 70, 255),    # Color when hovering over items
-                 accent_color=(0, 240, 255, 255),  # Arrow/Border accent (Cyan)
-                 text_color=(255, 255, 255, 255),  # Option text color
+                 bg_color=(30, 30, 45, 255),
+                 hover_color=(50, 50, 70, 255),
+                 accent_color=(0, 240, 255, 255),
+                 text_color=(255, 255, 255, 255),
                  batch=None, group=None, on_select=None):
         
         self.window = window
         self.x = x
-        self.y = y
+        self._y = y  # Backing variable for the y property
         self.width = width
         self.height = height
         self.options = options
@@ -485,73 +485,81 @@ class DropDownMenu:
         
         self.batch = batch if batch else pyglet.graphics.Batch()
         self.group = group
-        self.on_select = on_select  # Callback function: callback(selected_value)
+        self.on_select = on_select
         
         self.is_open = False
         self.hovered_index = -1
         
-        # Track active dynamic graphics elements
         self.shapes = []
         self.labels = []
         
-        # Build the initial collapsed state of the dropdown button
         self.update_graphics()
+
+    @property
+    def y(self):
+        """Getter: Returns the current baseline position anchor."""
+        return self._y
+
+    @y.setter
+    def y(self, new_y):
+        """Setter: Seamlessly handles page positioning modifications."""
+        delta_y = new_y - self._y
+        self._y = new_y
+        
+        # Shift all underlying geometry matching the page framework execution
+        for shape in self.shapes:
+            shape.y += delta_y
+        for label in self.labels:
+            label.y += delta_y
 
     @property
     def current_value(self):
         return self.options[self.selected_index]
 
     def update_graphics(self):
-        """Clears and rebuilds the visual look of the dropdown based on state."""
-        # Cleanup old geometric primitives and labels
+        """Clears and cleanly updates drawing loops tracking the relative self._y field."""
         self.shapes.clear()
         self.labels.clear()
         
-        # 1. DRAW MAIN HEADER BOX
-        # Outer Border Box
+        # 1. MAIN COLLAPSED HEADER
         border = pyglet.shapes.Rectangle(
-            self.x - 1, self.y - 1, self.width + 2, self.height + 2,
+            self.x - 1, self._y - 1, self.width + 2, self.height + 2,
             color=self.accent_color[:3], batch=self.batch, group=self.group
         )
         border.opacity = self.accent_color[3]
         self.shapes.append(border)
         
-        # Inner Fill Box
         main_box = pyglet.shapes.Rectangle(
-            self.x, self.y, self.width, self.height,
+            self.x, self._y, self.width, self.height,
             color=self.bg_color[:3], batch=self.batch, group=self.group
         )
         main_box.opacity = self.bg_color[3]
         self.shapes.append(main_box)
         
-        # Current Value Text
         val_label = pyglet.text.Label(
             self.current_value, font_name=self.font_name, font_size=self.font_size,
-            x=self.x + 10, y=self.y + (self.height // 2),
+            x=self.x + 10, y=self._y + (self.height // 2),
             anchor_x='left', anchor_y='center', color=self.text_color,
             batch=self.batch, group=self.group
         )
         self.labels.append(val_label)
         
-        # Little Drop Down Indicator Arrow (▼ or ▲)
         arrow_char = "▲" if self.is_open else "▼"
         arrow_label = pyglet.text.Label(
             arrow_char, font_name=self.font_name, font_size=self.font_size - 2,
-            x=self.x + self.width - 20, y=self.y + (self.height // 2),
+            x=self.x + self.width - 20, y=self._y + (self.height // 2),
             anchor_x='center', anchor_y='center', color=self.accent_color,
             batch=self.batch, group=self.group
         )
         self.labels.append(arrow_label)
         
-        # 2. IF OPEN, DRAW THE FLYOUT OPTIONS LIST BELOW
+        # 2. EXTENDED EXPANDED OPTIONS
         if self.is_open:
             for i, opt in enumerate(self.options):
-                opt_y = self.y - ((i + 1) * self.height)
+                opt_y = self._y - ((i + 1) * self.height)
                 
-                # Determine background box color (highlight if hovered)
                 box_color = self.hover_color if i == self.hovered_index else self.bg_color
                 
-                # Option list container background
                 opt_box = pyglet.shapes.Rectangle(
                     self.x, opt_y, self.width, self.height,
                     color=box_color[:3], batch=self.batch, group=self.group
@@ -559,7 +567,6 @@ class DropDownMenu:
                 opt_box.opacity = box_color[3]
                 self.shapes.append(opt_box)
                 
-                # Side separator border highlight line
                 opt_border = pyglet.shapes.Rectangle(
                     self.x, opt_y, 2, self.height,
                     color=self.accent_color[:3], batch=self.batch, group=self.group
@@ -567,10 +574,9 @@ class DropDownMenu:
                 opt_border.opacity = 255 if i == self.hovered_index else 50
                 self.shapes.append(opt_border)
                 
-                # Option text
                 opt_label = pyglet.text.Label(
                     opt, font_name=self.font_name, font_size=self.font_size,
-                    x=self.x + 15 if i == self.hovered_index else self.x + 10, # Jitter indent on hover!
+                    x=self.x + 15 if i == self.hovered_index else self.x + 10,
                     y=opt_y + (self.height // 2),
                     anchor_x='left', anchor_y='center', color=self.text_color,
                     batch=self.batch, group=self.group
@@ -578,34 +584,28 @@ class DropDownMenu:
                 self.labels.append(opt_label)
 
     def check_hit(self, x, y, bx, by, bw, bh):
-        """Helper matrix bounds calculation."""
         return bx <= x <= bx + bw and by <= y <= by + bh
 
     def on_mouse_press(self, x, y, button, modifiers):
-        # Clicked main header bar
-        if self.check_hit(x, y, self.x, self.y, self.width, self.height):
+        # Header hit evaluation tracking self._y
+        if self.check_hit(x, y, self.x, self._y, self.width, self.height):
             self.is_open = not self.is_open
             self.update_graphics()
-            return True # Consume event
+            return True
             
-        # Clicked an item inside the extended list layout
         if self.is_open:
             for i in range(len(self.options)):
-                opt_y = self.y - ((i + 1) * self.height)
+                opt_y = self._y - ((i + 1) * self.height)
                 if self.check_hit(x, y, self.x, opt_y, self.width, self.height):
                     self.selected_index = i
                     self.is_open = False
                     self.update_graphics()
-                    
-                    # Fire custom callback function immediately!
                     if self.on_select:
                         self.on_select(self.options[i])
                     return True
                     
-            # Clicked outside completely while open - close menu gracefully
             self.is_open = False
             self.update_graphics()
-            
         return False
 
     def on_mouse_motion(self, x, y, dx, dy):
@@ -615,14 +615,12 @@ class DropDownMenu:
         previous_hover = self.hovered_index
         self.hovered_index = -1
         
-        # Check coordinates against tracking option boxes
         for i in range(len(self.options)):
-            opt_y = self.y - ((i + 1) * self.height)
+            opt_y = self._y - ((i + 1) * self.height)
             if self.check_hit(x, y, self.x, opt_y, self.width, self.height):
                 self.hovered_index = i
                 break
                 
-        # Only rebuild the batch calculations if hover state actually changed
         if self.hovered_index != previous_hover:
             self.update_graphics()
             return True
