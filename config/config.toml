@@ -20,6 +20,8 @@ shopBuySuccess = "audio/buy-success.wav"
 shopBuyError = "audio/buy-error.wav"
 shopHistoryBrowse = "audio/history-nav.wav"
 homeBackground = "audio/home_music.wav"
+authBackground = "audio/auth_music.wav"
+authIntro = "audio/auth_intro.wav"
 
 [data]
 MatrixRenderingFile = "data/ascii-art.txt"

@@ -91,6 +91,7 @@ class SectorEightHome:
         self.feature_btn = None
         self.avatar_tint = None
         self.TINT_COLORS = {
+            "None": (200, 200, 200),
             "neon_green": (57, 255, 20),      # Classic matrix/laser green
             "electric_cyan": (0, 255, 255),    # Vibrant arcade cyan
             "cyber_pink": (255, 0, 127),      # Synthwave hot pink
@@ -109,14 +110,20 @@ class SectorEightHome:
         }
         self.AVATAR_DROPDOWN_COLORS = list()
         for tint in self.TINT_COLORS.keys():
-            split_tint = tint.split("_")
-            try:
-                tint_name = f"{split_tint[0]} {split_tint[1]}"
-            except IndexError:
-                tint_name = tint
+            if tint != "None":
+                split_tint = tint.split("_")
+                try:
+                    tint_name = f"{split_tint[0]} {split_tint[1]}"
+                except IndexError:
+                    tint_name = tint
+            else:
+                tint_name = "None"
             self.AVATAR_DROPDOWN_COLORS.append(tint_name.title())
         self.avatar_dropdown = None
         self.avatar_preview = None
+        self.avatar_rgb = self.data_storage.get("tint", (255, 255, 255))
+        self.customization_header = None
+        self.avatar_tint_label = None
         
         
     def sync_data(self, name, var):
@@ -213,17 +220,26 @@ class SectorEightHome:
         self.reward_obj.claim_reward()
         
     def change_user_avatar_tint(self, color):
-        lowercase = color.lower()
-        split_color = lowercase.split(" ")
-        try:
-            color_key = f"{split_color[0]}_{split_color[1]}"
-        except IndexError:
-            color_key = lowercase
-        
-        required_rgb = self.TINT_COLORS.get(color_key, (0, 0, 0, 0)) # Defaults to no tint
-        self.avatar_tint.color = required_rgb
-        self.avatar_preview.color = required_rgb
-        self.avatar_tint.opacity = 0
+        if color == "None":
+            self.avatar_tint.color = (200, 200, 200, 0)
+            self.avatar_preview.color = (200, 200, 200)
+            self.avatar_rgb = (200, 200, 200)
+            self.sync_data("tint", self.avatar_rgb)
+            return
+        else:
+            lowercase = color.lower()
+            split_color = lowercase.split(" ")
+            try:
+                color_key = f"{split_color[0]}_{split_color[1]}"
+            except IndexError:
+                color_key = lowercase
+            
+            required_rgb = self.TINT_COLORS.get(color_key, (200, 200, 200)) # Defaults to no tint
+            self.avatar_tint.color = required_rgb
+            self.avatar_preview.color = required_rgb
+            self.avatar_tint.opacity = 0
+            self.avatar_rgb = required_rgb
+            self.sync_data("tint", self.avatar_rgb)
     def init_window(self):
         pyglet.clock.schedule_interval_for_duration(self.show_loading_screen, 1/60, 2.4)
         pyglet.clock.schedule_once(self.hide_loading_screen, 2.4)
@@ -267,7 +283,7 @@ class SectorEightHome:
                                                    y=self.user_img.y,
                                                    width=100,
                                                    height=100,
-                                                   color=(57, 255, 20,),
+                                                   color=self.avatar_rgb,
                                                    batch=self.interface)
         self.avatar_tint.opacity = 0
         
@@ -333,12 +349,31 @@ class SectorEightHome:
                                                     y=self.issue_reporting_btn.y - 50 - 50, width=400, height=50,
                                                     batch=self.interface, colour=(150, 150, 150),
                                                     text_color=(0, 255, 200))
-        self.avatar_dropdown = utilities.DropDownMenu(self.window, self.feature_btn.x, self.feature_btn.y - 100,
+        self.customization_header = pyglet.text.Label("Quick Customization",
+                                                      x=self.feature_btn.x, 
+                                                      y=self.feature_btn.y - 100,
+                                                      font_name=self.font_list,
+                                                      font_size=21, color=(255, 255, 255),
+                                                      batch=self.interface)
+        self.avatar_tint_label = pyglet.text.Label("Change Avatar Tint: ",
+                                                   self.customization_header.x,
+                                                   y=self.customization_header.y - 100,
+                                                   font_name=self.font_list,
+                                                   font_size=18, batch=self.interface,
+                                                   color=(255, 255, 255))
+        
+        for i in range(16):
+            value = list(self.TINT_COLORS.values())[i]
+            if value == self.avatar_rgb:
+                break
+            
+        self.avatar_dropdown = utilities.DropDownMenu(self.window, self.avatar_tint_label.x + 300, 
+                                                      self.avatar_tint_label.y,
                                                       400, 40, self.AVATAR_DROPDOWN_COLORS, batch=self.interface,
-                                                      on_select=self.change_user_avatar_tint)
+                                                      on_select=self.change_user_avatar_tint, default_index=i)
         self.avatar_preview = pyglet.shapes.Rectangle(self.avatar_dropdown.x + self.avatar_dropdown.width + 100,
                                                       self.avatar_dropdown.y,
-                                                      width=40, height=40, color=(57, 255, 20,), batch=self.interface)
+                                                      width=40, height=40, color=self.avatar_rgb, batch=self.interface)
         
         self.add_multiple_elements(self.side_panel_user_ui, self.user_img, self.user_label)
         self.add_scrolllist([self.badge_1,
@@ -352,7 +387,9 @@ class SectorEightHome:
                              self.issue_reporting_btn,
                              self.feature_btn,
                              self.avatar_dropdown,
-                             self.avatar_preview])
+                             self.avatar_preview,
+                             self.customization_header,
+                             self.avatar_tint_label])
         
         
         
