@@ -22,7 +22,11 @@ import time
 
 # Load stuff.
 window = pyglet.window.Window(width=1600,height=850,caption="Sector 8")
-
+window.set_vsync(True)
+screen = window.display.get_default_screen()
+x_pos = (screen.width - window.width) // 2
+y_pos = (screen.height - window.height) // 2
+window.set_location(x_pos, y_pos)
 
 se = canvas.SectorEight(window)
     

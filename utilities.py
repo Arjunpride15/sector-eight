@@ -648,4 +648,112 @@ class CyclicBadge:
     
     def auto_swipe(self, dt):
         self.go_right()
-               
+
+class TextBox:
+    def __init__(self, x, y, width, height, batch, placeholder="Enter text...", masked=False, 
+                 font_name=font_list, font_size=18, bg_color=(15, 15, 20), border_normal=(70, 75, 85),
+                 border_active=(50, 150, 250), text_color=(255, 255, 255, 255), 
+                 placeholder_color=(110, 115, 125, 255)):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.batch = batch
+        self.placeholder = placeholder
+        self.masked = masked
+        
+        self.text = ""
+        self.focused = False
+        
+        # Color Palette (Google/Cyber-slate hybrid)
+        self.bg_color = bg_color
+        self.border_normal = border_normal
+        self.border_active = border_active      
+        self.text_color = text_color
+        self.placeholder_color = placeholder_color
+        
+        # Background & Border shapes
+        self.bg = pyglet.shapes.Rectangle(x, y, width, height, color=self.bg_color, batch=batch)
+        self.border = pyglet.shapes.Box(x, y, width, height, thickness=1, color=self.border_normal, batch=batch)
+        
+        # The display label
+        self.label = pyglet.text.Label(
+            self.placeholder,
+            font_name=font_name,
+            font_size=font_size,
+            x=x + 12,
+            y=y + (height // 2),
+            anchor_y="center",
+            color=self.placeholder_color,
+            batch=batch
+        )
+        
+        # Blinking Caret (Cursor)
+        self.caret = pyglet.shapes.Rectangle(
+            x + 12, y + 10, 2, height - 20,
+            color=self.border_active, batch=batch
+        )
+        self.caret.visible = False
+        
+        # Register cursor blinking rate (0.5 seconds)
+        pyglet.clock.schedule_interval(self._blink_cursor, 0.5)
+
+    def _blink_cursor(self, dt):
+        """Toggles caret visibility if the text box is active."""
+        if self.focused:
+            self.caret.visible = not self.caret.visible
+        else:
+            self.caret.visible = False
+        #print(self.label.width)
+
+    def update_text_rendering(self):
+        """Dynamically switches between raw text, masked text, and placeholder states."""
+        if not self.text:
+            self.label.text = self.placeholder
+            self.label.color = self.placeholder_color
+        else:
+            self.label.text = "•" * len(self.text) if self.masked else self.text
+            self.label.color = self.text_color
+            
+        # Reposition the blinking caret right after the current text width
+        text_width = self.label.content_width if self.text else 0
+        self.caret.x = self.x + 12 + text_width
+
+    def handle_click(self, mx, my):
+        """Call this from your window's on_mouse_press event."""
+        # Check if the click sits inside our bounding box
+        if self.x <= mx <= self.x + self.width and self.y <= my <= self.y + self.height:
+            self.focus()
+        else:
+            self.unfocus()
+
+    def focus(self):
+        self.focused = True
+        self.border.color = self.border_active
+        self.border.thickness = 2
+        self.caret.visible = True
+        self.update_text_rendering()
+
+    def unfocus(self):
+        self.focused = False
+        self.border.color = self.border_normal
+        self.border.thickness = 1
+        self.caret.visible = False
+        self.update_text_rendering()
+
+    def handle_text_input(self, char):
+        """Call this from your window's on_text event."""
+        if not self.focused:
+            return
+        # Reject control characters/newlines
+        if char.isprintable() and char != "\r":
+            self.text += char
+            self.update_text_rendering()
+
+    def handle_backspace(self):
+        """Call this from your window's on_key_press event when key.BACKSPACE is hit."""
+        if not self.focused:
+            return
+        if len(self.text) > 0:
+            self.text = self.text[:-1]
+            self.update_text_rendering()

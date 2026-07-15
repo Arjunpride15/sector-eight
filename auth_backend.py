@@ -29,46 +29,58 @@ class SectorEightAuthManager:
                                              batch=self.interface, width=600)
         self.loading_txt.opacity = 0
         self.loading_done = False
-    
-    def play(self, **kwargs):
-        try:
-            if not kwargs:
-                if not self.music_switch:
-                    winsound.PlaySound(self.configObj.toml_dict['music']['authBackground'], 
-                                       winsound.SND_FILENAME | winsound.SND_LOOP | winsound.SND_ASYNC)
-                                       
-            else:
-                # For custom music files passed via kwargs
-                device = miniaudio.PlaybackDevice()
-                stream = miniaudio.stream_file(kwargs['music_file'])
-                device.start(stream)
-        except KeyError:
-            return 'KeyError Encountered'
+        self.text_box = None
+        self.main_card = None
+        self.welcome_label = None
+        self.log_in_btn = None
+        self.log_up_btn = None
+        
+    def play(self, music_file=None):
+        
+        if music_file == None:
+            if not self.music_switch:
+                winsound.PlaySound(self.configObj.toml_dict['music']['authBackground'], 
+                                    winsound.SND_FILENAME | winsound.SND_LOOP | winsound.SND_ASYNC)
+                                    
+        else:
+            device = miniaudio.PlaybackDevice()
+            stream = miniaudio.stream_file(music_file)
+            device.start(stream)
+        
             
     def stop_music(self):
         winsound.PlaySound(None, winsound.SND_FILENAME)
         self.music_switch = False
-    def increase_intro_txt_opacity(self,dt):
-        if self.loading_txt.opacity <= 255:
-            self.loading_txt.opacity += 4.25
-    def decrease_intro_txt_opacity(self,dt):
-        if self.loading_txt.opacity >= 0:
-            self.loading_txt.opacity -= 4.25
-    def set_loading_as_done(self, dt):
-        self.loading_done = True
+    
     def show_loading_screen(self):
-        pyglet.clock.schedule_interval_for_duration(self.increase_intro_txt_opacity, 1/60, 2)
-    def hide_loading_screen(self, dt):
+        self.loading_txt.opacity = 255
         
-        pyglet.clock.schedule_interval_for_duration(self.decrease_intro_txt_opacity, 1/60, 2)
-        pyglet.clock.schedule_once(self.set_loading_as_done, 2)
-    def main_init_window(self):
+    def hide_loading_screen(self, dt):
+        self.loading_txt.opacity = 0
+        
+    def init_window(self):
         self.show_loading_screen()
         pyglet.clock.schedule_once(self.hide_loading_screen, 2)
-    
+        pyglet.clock.schedule_once(self.main_init_window, 2)
+        
+    def main_init_window(self, dt):
+        #self.text_box = utilities.TextBox(10, 10, 300, 40, self.interface, masked=True)
+        self.main_card = pyglet.shapes.RoundedRectangle(x=200, y=10, width=550, height=880, radius=18,
+                                                        color=(228, 233, 239, 255), batch=self.interface)
+        self.welcome_label = pyglet.text.Label(text="Welcome!", x=self.main_card.x + 135, y=800, 
+                                               color=(24, 28, 81, 255), batch=self.interface,
+                                               font_name="Open Sans", font_size=50)
+        self.log_in_btn = utilities.Button("Log In", self.welcome_label.x, self.welcome_label.y - 200,
+                                            width=300, height=50, batch=self.interface, colour=(26, 115, 232),
+                                            font_name="Open Sans")
+        self.log_up_btn = utilities.Button("Register", self.log_in_btn.x, self.log_in_btn.y - 150,
+                                            width=300, height=50, batch=self.interface, colour=(255, 215, 0),
+                                            font_name="Open Sans", text_color=(30, 30, 30, 255))
     def update(self, dt):
-        if self.loading_done == True:
-            self.loading_txt.opacity = 0
+        if self.text_box:
+            ...
+            #print(self.text_box.text)
+        
     def start(self):
         self.play()
         pyglet.clock.schedule_interval(self.update, 1/60)

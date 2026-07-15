@@ -8,7 +8,11 @@ window = pyglet.window.Window(width=1600,height=850,caption="Shop | Sector 8")
 
 #                     (r, g, b, a)
 pyglet.gl.glClearColor(0.2, 0.2, 0.35, 1)
-
+window.set_vsync(True)
+screen = window.display.get_default_screen()
+x_pos = (screen.width - window.width) // 2
+y_pos = (screen.height - window.height) // 2
+window.set_location(x_pos, y_pos)
 shop_instance = shop_backend.SectorEightShop(window)
 shop_instance.init_window()
 @window.event

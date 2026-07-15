@@ -6,7 +6,11 @@ import home_backend
 window = pyglet.window.Window(width=1600,height=850,caption="Home | Sector 8")
 
 pyglet.gl.glClearColor(0.2, 0.2, 0.35, 1)
-
+window.set_vsync(True)
+screen = window.display.get_default_screen()
+x_pos = (screen.width - window.width) // 2
+y_pos = (screen.height - window.height) // 2
+window.set_location(x_pos, y_pos)
 home_obj = home_backend.SectorEightHome(window)
 home_obj.init_window()
 @window.event
@@ -57,7 +61,7 @@ def on_mouse_press(x, y, button, modifiers):
         if home_obj.reward_badge != None:
             if home_obj.reward_badge.is_clicked(x, y):
                 with shelve.open(r"data\miscn") as miscn:
-                    if not miscn["claimed"]:
+                    if not miscn.get("claimed", False):
                         home_obj.reward_player() 
         if home_obj.err_reporting_label:
             if home_obj.issue_reporting_btn.is_clicked(x, y):
