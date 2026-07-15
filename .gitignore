@@ -13,3 +13,6 @@ data/miscn
 data/miscn-shm
 data/miscn-wal
 claim_resetter.py
+data/auth_db
+data/auth_db-shm
+data/auth_db-wal
