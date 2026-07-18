@@ -16,3 +16,4 @@ claim_resetter.py
 data/auth_db
 data/auth_db-shm
 data/auth_db-wal
+/.prompts
