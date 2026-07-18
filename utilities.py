@@ -664,6 +664,7 @@ class TextBox:
         
         self.text = ""
         self.focused = False
+        self.typing_disabled = False
         
         # Color Palette (Google/Cyber-slate hybrid)
         self.bg_color = bg_color
@@ -694,6 +695,7 @@ class TextBox:
             color=self.border_active, batch=batch
         )
         self.caret.visible = False
+        self.txt_box_visible = True
         
         # Register cursor blinking rate (0.5 seconds)
         pyglet.clock.schedule_interval(self._blink_cursor, 0.5)
@@ -728,32 +730,56 @@ class TextBox:
             self.unfocus()
 
     def focus(self):
-        self.focused = True
-        self.border.color = self.border_active
-        self.border.thickness = 2
-        self.caret.visible = True
-        self.update_text_rendering()
-
-    def unfocus(self):
-        self.focused = False
-        self.border.color = self.border_normal
-        self.border.thickness = 1
-        self.caret.visible = False
-        self.update_text_rendering()
-
-    def handle_text_input(self, char):
-        """Call this from your window's on_text event."""
-        if not self.focused:
-            return
-        # Reject control characters/newlines
-        if char.isprintable() and char != "\r":
-            self.text += char
+        if self.txt_box_visible:
+            self.focused = True
+            self.border.color = self.border_active
+            self.border.thickness = 2
+            self.caret.visible = True
             self.update_text_rendering()
 
+    def unfocus(self):
+        if self.txt_box_visible:
+            self.focused = False
+            self.border.color = self.border_normal
+            self.border.thickness = 1
+            self.caret.visible = False
+            self.update_text_rendering()
+
+    def handle_text_input(self, char: str):
+        if not self.typing_disabled:
+            if not self.focused:
+                return
+            # Reject control characters/newlines
+            if char.isprintable() and char != "\r":
+                self.text += char
+                self.update_text_rendering()
+
     def handle_backspace(self):
-        """Call this from your window's on_key_press event when key.BACKSPACE is hit."""
+        
         if not self.focused:
             return
         if len(self.text) > 0:
             self.text = self.text[:-1]
             self.update_text_rendering()
+    
+    def set_visible(self, visibility):
+        """ Change the visibility of a TextBox quickly. """
+        assert isinstance(visibility, bool)
+        self.bg.visible = visibility
+        self.border.visible = visibility
+        self.caret.visible = visibility
+        self.label.visible = visibility
+        self.txt_box_visible = visibility
+        if visibility:
+            try:
+                pyglet.clock.schedule_interval(self._blink_cursor, 0.5)
+                self.caret.visible = visibility
+            except Exception:
+                ...
+        else:
+            try:
+                pyglet.clock.unschedule(self._blink_cursor)
+                self.caret.visible = visibility
+            except Exception:
+                ...
+        

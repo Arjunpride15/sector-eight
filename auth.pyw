@@ -26,7 +26,8 @@ def on_mouse_press(x, y, button, modifiers):
         auth_obj.text_box.handle_click(x, y)
     except AttributeError:
         ...
-
+    auth_obj._handle_mouse_press(x, y, button, modifiers)
+    
 @window.event
 def on_text(text):
     try:
@@ -34,6 +35,7 @@ def on_text(text):
         auth_obj.text_box.handle_text_input(text)
     except AttributeError:
         ...
+    
 
 @window.event
 def on_key_press(symbol, modifiers):
