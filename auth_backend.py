@@ -13,6 +13,7 @@ import tastyerrors
 import datetime, time
 import pyglet.shapes
 from argon2 import PasswordHasher
+from session_manager import SessionManager
 
 class SectorEightAuthManager:
     def __init__(self, window):
@@ -48,6 +49,7 @@ class SectorEightAuthManager:
             hash_len=32,
             salt_len=32
         )
+        self.session_manager_obj = SessionManager()
         
         
             
@@ -104,11 +106,13 @@ class SectorEightAuthManager:
         self.text_box.set_visible(True)
         self.next_btn.set_visible(True)
         self.state = "log_in_usrname_prompt"
+        self.text_box.masked = False
 
     def draw_register_page(self):
         self.text_box.set_visible(True)
         self.next_btn.set_visible(True)
         self.state = "register_usrname_prompt"
+        self.text_box.masked = False
     
     def handle_pin_ui_request(self):
         #print(self.text_box.text)
@@ -117,7 +121,8 @@ class SectorEightAuthManager:
         self.welcome_label.text = f"Welcome, {self.username}"
         
         self.text_box.masked = True
-    
+
+        self.text_box.placeholder_color = (110, 115, 125, 255)
         self.text_box.text = ""
         self.text_box.placeholder = "Enter PIN"
         self.text_box.update_text_rendering()
@@ -127,15 +132,23 @@ class SectorEightAuthManager:
         elif self.state == "register_usrname_prompt":
             self.state = "register_pin_prompt"
     
+    
+        
     def handle_success(self):
-        self.welcome_label.width = 950
-        self.welcome_label.multiline = True
-        self.welcome_label.color = (255, 255, 255)
-        self.welcome_label.text = \
-        "Success! \n You may now safely close this window. \n Sector Eight Authentication Manager"
         self.main_card.visible = False
         self.next_btn.set_visible(False)
         self.text_box.set_visible(False)
+        #self.handle_session_management()
+        self.session_manager_obj.save_session(username=self.username)
+        self.welcome_label.x = 50
+        self.welcome_label.y = self.window.height // 2 + 50
+        self.welcome_label.width = self.window.width - 100
+        self.welcome_label.multiline = True
+        self.welcome_label.font_size = 28
+        self.welcome_label.color = (255, 255, 255, 255) # Include alpha
+        self.welcome_label.text = \
+        "Success!\nYou may now safely close this window.\nSector Eight Authentication Manager"
+        
         
     
     def verify(self, username, password):
@@ -143,12 +156,14 @@ class SectorEightAuthManager:
 
         if clean_username not in self.secure_password_dict:
             self.handle_opt_btn_resize_order(type_="Log In")
+            self.state = "log_in_usrname_prompt" # Reset state!
             self.text_box.placeholder_color = (200, 0, 0)
             self.text_box.masked = False
             self.text_box.text = ""
             self.text_box.placeholder = "User doesn't exist!"
             self.text_box.update_text_rendering()
-            return  # Stop execution!
+            self.username = ""
+            return
 
         stored_hash = self.secure_password_dict[clean_username]
         
@@ -162,6 +177,7 @@ class SectorEightAuthManager:
             self.text_box.text = ""
             self.text_box.placeholder = "Incorrect PIN!"
             self.text_box.update_text_rendering()
+            self.username = ""
             return  # Stop execution!
         else:
             self.handle_success()
@@ -173,10 +189,12 @@ class SectorEightAuthManager:
         # 1. Check if user already exists
         if clean_username in self.secure_password_dict:
             self.handle_opt_btn_resize_order(type_="Register")
+            self.state = "register_usrname_prompt"
             self.text_box.placeholder_color = (200, 0, 0)
             self.text_box.masked = False
             self.text_box.text = ""
             self.text_box.placeholder = "User already exists"
+            self.username = ""
             self.text_box.update_text_rendering()
             return  # Stop execution!
 
@@ -251,6 +269,7 @@ class SectorEightAuthManager:
             else:
                 self.text_box.typing_disabled = False
             #print(self.text_box.text)
+            #print(self.session_manager_obj.get_active_user())
         
     def start(self):
         self.play()

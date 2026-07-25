@@ -2,10 +2,16 @@ import shelve
 import statistics, random
 import datetime
 from typing import Any
+from session_manager import SessionManager
 
 class SectorEightRecommendations:
     def __init__(self):
-        self.log_store = shelve.open(r"data\purchases")
+        self.session_obj = SessionManager()
+        self.active_user = self.session_obj.get_active_user()
+        if self.active_user:
+            self.log_store = shelve.open(f'data\\temp\\log\\{self.active_user}')
+        else:
+            Popen(["auth_launch.cmd"])
         self.log: list[str] = self.log_store.get('log', list())
         
     def get_item_history(self) -> list[str]:

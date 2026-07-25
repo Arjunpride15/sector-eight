@@ -1,6 +1,6 @@
 @echo off
 REM Safely stop Sector Eight
-taskkill /FI "WINDOWTITLE eq Sector 8*" /F >nul 2>&1
-timeout /t 1 /nobreak >nul
+taskkill /IM python.exe >nul 2>&1
+
 call se_env\Scripts\activate
 python auth.pyw

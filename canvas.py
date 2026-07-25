@@ -12,6 +12,7 @@ import utilities
 import random
 from typing import NamedTuple
 from subprocess import Popen
+from session_manager import SessionManager
 
 class NotImplementedWarning(Warning):
     pass
@@ -45,7 +46,12 @@ class SectorEight:
         self.grid_pos = None
         self.ghost_grid_pos = None
         # Pellets!
-        self.data_store = shelve.open('data\\game_data')
+        self.session_obj = SessionManager()
+        self.active_user = self.session_obj.get_active_user()
+        if self.active_user:
+            self.data_store = shelve.open(f'data\\temp\\game_data\\{self.active_user}')
+        else:
+            Popen(["auth_launch.cmd"])
         self.pellets = self.data_store.get('pellets', 0)
         self.ghost_pellets = self.data_store.get('ghost_pellets', 0)
         # Laser Stuff

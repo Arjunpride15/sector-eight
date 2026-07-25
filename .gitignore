@@ -17,4 +17,9 @@ data/auth_db
 data/auth_db-shm
 data/auth_db-wal
 /.prompts
-data/auth_db
+data/temp/game_data/*
+data/temp/log/*
+data/temp/miscn/*
+data/sessions
+data/sessions-shm
+data/sessions-wal

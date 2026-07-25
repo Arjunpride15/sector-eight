@@ -1,9 +1,15 @@
 import shelve, time, atexit, pyglet
 from datetime import datetime, timedelta
+from session_manager import SessionManager
 
 class DailyRewards:
     def __init__(self):
-        self.db = shelve.open("data\\miscn")
+        self.session_obj = SessionManager()
+        self.active_user = self.session_obj.get_active_user()
+        if self.active_user:
+            self.db = shelve.open(f'data\\temp\\miscn\\{self.active_user}')
+        else:
+            Popen(["auth_launch.cmd"])
         
         self.prev_time = self.db.get("last_opened", time.time())
         self.claimed_yet = self.db.get("claimed", False)

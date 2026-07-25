@@ -710,7 +710,7 @@ class TextBox:
 
     def update_text_rendering(self):
         """Dynamically switches between raw text, masked text, and placeholder states."""
-        if not self.text:
+        if self.text == "":
             self.label.text = self.placeholder
             self.label.color = self.placeholder_color
         else:

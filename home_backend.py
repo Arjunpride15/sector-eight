@@ -12,6 +12,7 @@ import tastyerrors
 import datetime, time
 import pyglet.shapes
 from daily_rewards import DailyRewards
+from session_manager import SessionManager
 
 class DailyRewardItem(NamedTuple):
     name: str
@@ -28,7 +29,12 @@ class SectorEightHome:
         pyglet.options['search_local_libs'] = True
         pyglet.font.add_file('fonts/OpenSans-Regular.ttf')
         self.main_items = list()
-        self.data_storage = shelve.open(r'data\game_data')
+        self.session_obj = SessionManager()
+        self.active_user = self.session_obj.get_active_user()
+        if self.active_user:
+            self.data_storage = shelve.open(f'data\\temp\\game_data\\{self.active_user}')
+        else:
+            Popen(["auth_launch.cmd"])
         self.log_file = shelve.open(r"data\purchases")
         
         self.pellets = self.data_storage.get('pellets', 0)
@@ -40,7 +46,7 @@ class SectorEightHome:
         self.welcome_label = None
         self.vruler = None
         self.ruler = None
-        self.user = "test_player"
+        self.user = self.session_obj.get_active_user()
         self.font_list = self.configObj.toml_dict['font']['fontList']
         self.side_panel_btn = None
         self.background = (51, 51, 89, 255)

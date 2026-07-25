@@ -11,6 +11,7 @@ import random
 import tastyerrors
 import datetime, time
 from recommendations import SectorEightRecommendations, SectorEightHistory
+from session_manager import SessionManager
 
 class ShopItem(NamedTuple):
     item_name: str
@@ -28,7 +29,12 @@ class SectorEightShop:
         self.rec_badge = None
         pyglet.options['search_local_libs'] = True
         pyglet.font.add_file('fonts/MerriweatherSans-Light.ttf')
-        self.data_storage = shelve.open('data\\game_data')
+        self.session_obj = SessionManager()
+        self.active_user = self.session_obj.get_active_user()
+        if self.active_user:
+            self.data_storage = shelve.open(f'data\\temp\\game_data\\{self.active_user}')
+        else:
+            Popen(["auth_launch.cmd"])
         self.log_file = shelve.open(r"data\purchases")
         self.laser_powers = self.data_storage.get('laser', 5)
         self.xp_speedups = self.data_storage.get('xp', 3)
