@@ -33,9 +33,10 @@ class SectorEightShop:
         self.active_user = self.session_obj.get_active_user()
         if self.active_user:
             self.data_storage = shelve.open(f'data\\temp\\game_data\\{self.active_user}')
+            self.log_file = shelve.open(f"data\\temp\\log\\{self.active_user}")
         else:
             Popen(["auth_launch.cmd"])
-        self.log_file = shelve.open(r"data\purchases")
+        
         self.laser_powers = self.data_storage.get('laser', 5)
         self.xp_speedups = self.data_storage.get('xp', 3)
         self.powerups = self.data_storage.get('powerups', 10)

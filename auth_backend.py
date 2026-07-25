@@ -19,7 +19,10 @@ class SectorEightAuthManager:
     def __init__(self, window):
         self.window = window
         self.interface = pyglet.graphics.Batch()
-        self.data_storage = shelve.open("data\\game_data")
+        self.session_manager_obj = SessionManager()
+        self.active_user = self.session_manager_obj.get_active_user()
+        if self.active_user:
+            self.data_storage = shelve.open(f'data\\temp\\game_data\\{self.active_user}')
         self.auth_db = shelve.open("data\\auth_db")
         self.secure_password_dict: dict = self.auth_db.get("password_dict", dict())
         pyglet.options['search_local_libs'] = True
@@ -49,7 +52,7 @@ class SectorEightAuthManager:
             hash_len=32,
             salt_len=32
         )
-        self.session_manager_obj = SessionManager()
+       
         
         
             
