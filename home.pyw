@@ -53,7 +53,7 @@ def on_mouse_press(x, y, button, modifiers):
             if home_obj.cyclic_state_list[0] and home_obj.badge_1.is_clicked(x, y):
                 home_obj.shop()
             elif home_obj.cyclic_state_list[1] and home_obj.badge_2.is_clicked(x, y):
-                ...       
+                home_obj.logout()       
             elif home_obj.cyclic_state_list[2] and home_obj.badge_3.is_clicked(x, y):
                 home_obj.query()
             elif home_obj.cyclic_state_list[3] and home_obj.badge_4.is_clicked(x, y):

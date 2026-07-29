@@ -13,6 +13,7 @@ import datetime, time
 import pyglet.shapes
 from daily_rewards import DailyRewards
 from session_manager import SessionManager
+import sys, obfuscator
 
 class DailyRewardItem(NamedTuple):
     name: str
@@ -31,10 +32,13 @@ class SectorEightHome:
         self.main_items = list()
         self.session_obj = SessionManager()
         self.active_user = self.session_obj.get_active_user()
+        self.obfuscator_obj = obfuscator.PseudoEncryptor()
         if self.active_user:
-            self.data_storage = shelve.open(f'data\\temp\\game_data\\{self.active_user}')
+            self.data_storage = \
+            shelve.open(f'data\\temp\\game_data\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}')
         else:
             Popen(["auth_launch.cmd"])
+            sys.exit()
         self.log_file = shelve.open(r"data\purchases")
         
         self.pellets = self.data_storage.get('pellets', 0)
@@ -218,6 +222,9 @@ class SectorEightHome:
         Popen(["unilaunch.cmd", "-hg"])
     def query(self):
         ...
+    def logout(self):
+        self.session_obj.clear_session()
+        Popen(["auth_launch.cmd"])
     def reward_player(self):
         var = self.data_storage.get(self.reward_of_the_day_key, 0)
         var += self.num_reward
@@ -263,7 +270,7 @@ class SectorEightHome:
         self.pellet_label = pyglet.text.Label(f'\N{COIN}: {self.pellets}', 
                                               font_name="Open Sans", 
                                               font_size=20,
-                                              x=83 + self.welcome_label.x + 200, 
+                                              x=83 + self.welcome_label.x + 300, 
                                               y=740, 
                                               batch=self.header_interface, 
                                               color=(253, 189, 1, 255))
@@ -401,7 +408,7 @@ class SectorEightHome:
         
     def update(self, dt):
         if self.welcome_label != None:
-            self.pellet_label.x = 83 + self.welcome_label.x + 200
+            self.pellet_label.x = 83 + self.welcome_label.x + 300
             self.vruler.x = self.vruler.x2 = self.welcome_label.x - 20
             self.ruler.y = self.ruler.y2 = self.welcome_label.y - 20
             self.pellet_label.text = f'\N{COIN}: {self.pellets}'

@@ -12,6 +12,7 @@ import tastyerrors
 import datetime, time
 from recommendations import SectorEightRecommendations, SectorEightHistory
 from session_manager import SessionManager
+import sys, obfuscator
 
 class ShopItem(NamedTuple):
     item_name: str
@@ -31,12 +32,14 @@ class SectorEightShop:
         pyglet.font.add_file('fonts/MerriweatherSans-Light.ttf')
         self.session_obj = SessionManager()
         self.active_user = self.session_obj.get_active_user()
+        self.obfuscator_obj = obfuscator.PseudoEncryptor()
         if self.active_user:
-            self.data_storage = shelve.open(f'data\\temp\\game_data\\{self.active_user}')
-            self.log_file = shelve.open(f"data\\temp\\log\\{self.active_user}")
+            user_file = self.obfuscator_obj.obfuscate_filename(self.active_user)
+            self.data_storage = shelve.open(f'data\\temp\\game_data\\{user_file}')
+            self.log_file = shelve.open(f"data\\temp\\log\\{user_file}")
         else:
             Popen(["auth_launch.cmd"])
-        
+            sys.exit()
         self.laser_powers = self.data_storage.get('laser', 5)
         self.xp_speedups = self.data_storage.get('xp', 3)
         self.powerups = self.data_storage.get('powerups', 10)

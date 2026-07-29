@@ -13,6 +13,7 @@ import random
 from typing import NamedTuple
 from subprocess import Popen
 from session_manager import SessionManager
+import sys, obfuscator
 
 class NotImplementedWarning(Warning):
     pass
@@ -48,10 +49,13 @@ class SectorEight:
         # Pellets!
         self.session_obj = SessionManager()
         self.active_user = self.session_obj.get_active_user()
+        self.obfuscator_obj = obfuscator.PseudoEncryptor()
         if self.active_user:
-            self.data_store = shelve.open(f'data\\temp\\game_data\\{self.active_user}')
+            self.data_store = \
+            shelve.open(f'data\\temp\\game_data\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}')
         else:
             Popen(["auth_launch.cmd"])
+            sys.exit()
         self.pellets = self.data_store.get('pellets', 0)
         self.ghost_pellets = self.data_store.get('ghost_pellets', 0)
         # Laser Stuff
@@ -790,7 +794,7 @@ class SectorEight:
         if not self.game_active:
             return
 
-        if self.ghost_lives == 0 or self.pellets == 0:
+        if self.ghost_lives == 0 or (self.pellets == 0 and self.eater_lives < 4 + self.extra_lives):
             self.game_active = False
             self.game_paused = True
             self.you_won()

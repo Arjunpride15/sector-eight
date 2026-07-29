@@ -1,4 +1,4 @@
-import shelve, time, atexit, pyglet
+import shelve, time, atexit, pyglet, obfuscator
 from datetime import datetime, timedelta
 from session_manager import SessionManager
 
@@ -6,8 +6,10 @@ class DailyRewards:
     def __init__(self):
         self.session_obj = SessionManager()
         self.active_user = self.session_obj.get_active_user()
+        self.obfuscator_obj = obfuscator.PseudoEncryptor()
         if self.active_user:
-            self.db = shelve.open(f'data\\temp\\miscn\\{self.active_user}')
+            self.db = \
+            shelve.open(f'data\\temp\\miscn\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}')
         else:
             Popen(["auth_launch.cmd"])
         

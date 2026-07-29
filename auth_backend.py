@@ -9,7 +9,7 @@ from subprocess import Popen
 from canvas import NotImplementedWarning
 from typing import NamedTuple, Iterable
 import random
-import tastyerrors
+import tastyerrors, obfuscator
 import datetime, time
 import pyglet.shapes
 from argon2 import PasswordHasher
@@ -21,8 +21,10 @@ class SectorEightAuthManager:
         self.interface = pyglet.graphics.Batch()
         self.session_manager_obj = SessionManager()
         self.active_user = self.session_manager_obj.get_active_user()
+        self.obfuscator_obj = obfuscator.PseudoEncryptor()
         if self.active_user:
-            self.data_storage = shelve.open(f'data\\temp\\game_data\\{self.active_user}')
+            self.data_storage = \
+            shelve.open(f'data\\temp\\game_data\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}')
         self.auth_db = shelve.open("data\\auth_db")
         self.secure_password_dict: dict = self.auth_db.get("password_dict", dict())
         pyglet.options['search_local_libs'] = True

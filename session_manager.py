@@ -3,6 +3,7 @@ import time
 from datetime import datetime, timedelta
 import atexit, pyglet
 
+
 class SessionManager:
     def __init__(self, auto_clean=True):    
         self.db = shelve.open("data\\sessions")
