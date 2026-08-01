@@ -18,6 +18,7 @@ auth_obj.init_window()
 @window.event
 def on_draw():
     window.clear()
+    pyglet.gl.glClearColor(*auth_obj.background)
     auth_obj.interface.draw()
 
 @window.event

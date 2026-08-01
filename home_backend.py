@@ -53,11 +53,12 @@ class SectorEightHome:
         self.user = self.session_obj.get_active_user()
         self.font_list = self.configObj.toml_dict['font']['fontList']
         self.side_panel_btn = None
-        self.background = (51, 51, 89, 255)
+        self.background = self.data_storage.get('background', (0.2, 0.2, 0.35, 1))
         self.num_side_btn_clicked = 0
         self.user_img = None
         self.user_label = None
         self.side_panel_user_ui = list()
+        self.side_panel_btn_list: list[utilities.Button | None] = list()
         self.settings_button = None
         self.shop_btn = None
         self.game_btn = None
@@ -134,7 +135,16 @@ class SectorEightHome:
         self.avatar_rgb = self.data_storage.get("tint", (255, 255, 255))
         self.customization_header = None
         self.avatar_tint_label = None
-        
+        self.theme_backgrounds = {
+            'Dark+': (30/255, 30/255, 30/255, 1.0),
+            'Epic Dark Blue': (15/255, 18/255, 32/255, 1.0),
+            'Modern Blue': (0.2, 0.2, 0.35, 1),
+            'Simply Light': (0.898, 0.914, 0.941, 1.0),
+            'Light Sunset': (253/255, 230/255, 224/255, 1.0),
+            'Neon Mania': (random.random(), random.random(), random.random(), 1.0)
+        }
+        self.theme_dropdown = None
+        self.theme_dropdown_label = None
         
     def sync_data(self, name, var):
         self.data_storage[name] = var
@@ -253,6 +263,50 @@ class SectorEightHome:
             self.avatar_tint.opacity = 0
             self.avatar_rgb = required_rgb
             self.sync_data("tint", self.avatar_rgb)
+    
+    def change_theme(self, theme):
+        self.background = self.theme_backgrounds[theme]
+        self.sync_data('background', self.background)
+        
+        is_light = 'Light' in theme
+        
+        # 1. Flip Header Lines & Labels
+        if is_light:
+            line_color = (25, 25, 25, 255)
+            text_color = (25, 25, 25, 255)
+        else:
+            line_color = (255, 255, 255, 255)
+            text_color = (255, 255, 255, 255)
+
+        # Only update lines if color changed
+        if self.vruler and self.vruler.color[:3] != line_color[:3]:
+            self.vruler.color = line_color
+            self.ruler.color = line_color
+
+        # Only update text labels if color changed
+        if self.welcome_label and self.welcome_label.color[:3] != text_color[:3]:
+            self.welcome_label.color = text_color
+            if hasattr(self, 'user_label') and self.user_label:
+                self.user_label.color = text_color
+            if hasattr(self, 'customization_header') and self.customization_header:
+                self.customization_header.color = text_color
+            if hasattr(self, 'avatar_tint_label') and self.avatar_tint_label:
+                self.avatar_tint_label.color = text_color
+            if hasattr(self, 'theme_dropdown_label') and self.theme_dropdown_label:
+                self.theme_dropdown_label.color = text_color
+
+        # 2. Update Mask Rectangle Color (matching background)
+        rgb_background = utilities.convertGLtoRGBA(*self.background)
+        if self.mask_rect:
+            self.mask_rect.color = rgb_background
+
+        # 3. Update Side Panel Toggle Button Background Color
+        if self.side_panel_btn:
+            self.side_panel_btn.shape.set_color(rgb_background)
+            # Flip hamburger icon color for visibility
+            if self.side_panel_btn.label.color[:3] != text_color[:3]:
+                self.side_panel_btn.label.color = text_color
+        self.user_label.opacity = 0
     def init_window(self):
         pyglet.clock.schedule_interval_for_duration(self.show_loading_screen, 1/60, 2.4)
         pyglet.clock.schedule_once(self.hide_loading_screen, 2.4)
@@ -283,10 +337,10 @@ class SectorEightHome:
                                         thickness=1.6, color=(255, 255, 255, 255), batch=self.header_interface)
         
         self.side_panel_btn = utilities.Button("\u2630", 10, self.ruler.y + 20, 50, 50, self.header_interface,
-                                               self.background, font_name="Open Sans", font_size=35)
+                                               utilities.convertGLtoRGBA(*self.background), font_name="Open Sans", font_size=35)
         self.mask_rect = pyglet.shapes.Rectangle(
             x=0, y=ruler_y, width=self.window.width, height=self.window.width - ruler_y,
-            color=self.background, batch=self.mask_interface
+            color=utilities.convertGLtoRGBA(*self.background), batch=self.mask_interface
         )
         
         self.user_img = pyglet.sprite.Sprite(pyglet.resource.image("images/user.png"), x=50.0, y=self.ruler.y - 130,
@@ -387,8 +441,38 @@ class SectorEightHome:
         self.avatar_preview = pyglet.shapes.Rectangle(self.avatar_dropdown.x + self.avatar_dropdown.width + 100,
                                                       self.avatar_dropdown.y,
                                                       width=40, height=40, color=self.avatar_rgb, batch=self.interface)
+        for index in range(len(list(self.theme_backgrounds.keys()))):
+            bg = list(self.theme_backgrounds.values())[index]
+            if bg == self.background:
+                break
+        else: # No matching color found!
+            index = list(self.theme_backgrounds.keys()).index('Neon Mania')
         
-        self.add_multiple_elements(self.side_panel_user_ui, self.user_img, self.user_label)
+        self.theme_dropdown_label = pyglet.text.Label("Change Background Theme: ",
+                                                   x=self.avatar_tint_label.x,
+                                                   y=self.avatar_dropdown.y - 100,
+                                                   font_name=self.font_list,
+                                                   font_size=18, batch=self.interface,
+                                                   color=(255, 255, 255))
+        self.theme_dropdown = utilities.DropDownMenu(self.window, self.theme_dropdown_label.x + 400, 
+                                                     self.avatar_dropdown.y - 100,
+                                                     400, 40, list(self.theme_backgrounds.keys()), 
+                                                     batch=self.interface, 
+                                                     on_select=self.change_theme, accent_color=(150, 150, 150, 255),
+                                                     default_index=index)
+        # hack: initialize all elements' colors properly
+        for dict_key, gl_color in self.theme_backgrounds.items():
+            if gl_color == self.background:
+                self.change_theme(dict_key)
+        
+        self.add_multiple_elements(self.side_panel_user_ui, 
+                                   self.user_img, self.user_label)
+        self.add_multiple_elements(self.side_panel_btn_list,
+                                   self.settings_button,
+                                   self.game_btn,
+                                   self.shop_btn,
+                                   self.logout_btn,
+                                   self.query_btn)
         self.add_scrolllist([self.badge_1,
                              self.badge_2,
                              self.badge_3,
@@ -402,7 +486,9 @@ class SectorEightHome:
                              self.avatar_dropdown,
                              self.avatar_preview,
                              self.customization_header,
-                             self.avatar_tint_label])
+                             self.avatar_tint_label,
+                             self.theme_dropdown,
+                             self.theme_dropdown_label,])
         
         
         
@@ -429,6 +515,7 @@ class SectorEightHome:
                 self.reward_badge.btn_text.text = "CLAIMED"
                 self.reward_badge.bg.color = (140, 0, 12)
                 self.reward_badge.title.text = "Reward Of The Day"
+            self.theme_backgrounds['Neon Mania'] = (random.random(), random.random(), random.random(), 1.0)
         
         
     def start(self):

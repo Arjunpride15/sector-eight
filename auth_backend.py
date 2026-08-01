@@ -25,6 +25,11 @@ class SectorEightAuthManager:
         if self.active_user:
             self.data_storage = \
             shelve.open(f'data\\temp\\game_data\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}')
+            self.background = self.data_storage.get('background', (0.2, 0.2, 0.35, 1))
+        else:
+            self.background = (0.2, 0.2, 0.35, 1)
+        
+        
         self.auth_db = shelve.open("data\\auth_db")
         self.secure_password_dict: dict = self.auth_db.get("password_dict", dict())
         pyglet.options['search_local_libs'] = True
@@ -37,6 +42,10 @@ class SectorEightAuthManager:
                                              color=(255, 255, 255), font_name="Open Sans",
                                              batch=self.interface, width=600)
         self.loading_txt.opacity = 0
+        if self.is_dark_background():
+            self.loading_txt.color = (255, 255, 255)
+        else:
+            self.loading_txt.color = (0, 0, 0)
         self.loading_done = False
         self.text_box = None
         self.main_card = None
@@ -54,6 +63,7 @@ class SectorEightAuthManager:
             hash_len=32,
             salt_len=32
         )
+        
        
         
         
@@ -118,6 +128,12 @@ class SectorEightAuthManager:
         self.next_btn.set_visible(True)
         self.state = "register_usrname_prompt"
         self.text_box.masked = False
+    
+    def is_dark_background(self):
+        r, g, b = self.background[:3]
+        # Calculate standard perceived relative luminance
+        luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        return luminance < 0.5
     
     def handle_pin_ui_request(self):
         #print(self.text_box.text)
@@ -267,6 +283,12 @@ class SectorEightAuthManager:
                                          colour=(0, 245, 190), text_color=(20, 20, 30))
         self.next_btn.set_visible(False)
         self.loading_done = True
+        if self.is_dark_background():
+            self.main_card.color = (228, 233, 239, 255)
+            self.welcome_label.color = (24, 28, 81, 255)
+        else:
+            self.main_card.color = (27, 22, 16, 255)
+            self.welcome_label.color = (231, 227, 174, 255)
     def update(self, dt):
         if self.text_box:
             if len(self.text_box.text) > 20:

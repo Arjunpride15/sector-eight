@@ -11,7 +11,11 @@ def coord_distance(x1, y1, x2, y2):
     result = (num1 + num2) ** 0.5
     return result
 
+def convertRGBAtoGL(r, g, b, a):
+    return (r/255, g/255, b/255, a/255)
 
+def convertGLtoRGBA(r, g, b, a):
+    return (round(r*255), round(g*255), round(b*255), round(a*255))
 class RoundedRectangle:
     def __init__(self, x, y, width, height, radius, color, batch):
         """
@@ -44,6 +48,10 @@ class RoundedRectangle:
     def set_opacity(self, opacity):
         for shape in self.shapes:
             shape.opacity = opacity
+    
+    def set_color(self, color):
+        for shape in self.shapes:
+            shape.color = color
 
     def delete(self):
         for shape in self.shapes:

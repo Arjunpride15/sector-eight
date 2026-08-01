@@ -1,6 +1,7 @@
 import pyglet, shelve, webbrowser
 from pyglet.window import key, mouse
 import home_backend
+from utilities import convertRGBAtoGL
 
 
 window = pyglet.window.Window(width=1600,height=850,caption="Home | Sector 8")
@@ -13,11 +14,13 @@ y_pos = (screen.height - window.height) // 2
 window.set_location(x_pos, y_pos)
 home_obj = home_backend.SectorEightHome(window)
 home_obj.init_window()
+#print(home_obj.theme_backgrounds.values())
 @window.event
 def on_draw():
     
     # Clear the window to avoid drawing over previous frames
     window.clear()
+    pyglet.gl.glClearColor(*home_obj.background)
     home_obj.interface.draw()
     home_obj.mask_interface.draw()
     home_obj.header_interface.draw()
@@ -27,6 +30,7 @@ def on_mouse_press(x, y, button, modifiers):
     if button == mouse.LEFT:
         try:
             home_obj.avatar_dropdown.on_mouse_press(x, y, button, modifiers)
+            home_obj.theme_dropdown.on_mouse_press(x, y, button, modifiers)
         except AttributeError:
             ...
         if home_obj.side_panel_btn != None:
@@ -73,6 +77,7 @@ def on_mouse_press(x, y, button, modifiers):
 def on_mouse_motion(x, y, dx, dy):
     try:
         home_obj.avatar_dropdown.on_mouse_motion(x, y, dx, dy)
+        home_obj.theme_dropdown.on_mouse_motion(x, y, dx, dy)
     except AttributeError:
         ...
     
