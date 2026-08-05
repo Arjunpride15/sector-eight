@@ -22,6 +22,7 @@ shopHistoryBrowse = "audio/history-nav.wav"
 homeBackground = "audio/home_music.wav"
 authBackground = "audio/auth_music.wav"
 authIntro = "audio/auth_intro.wav"
+settingsBackground = "audio/settings_music.wav"
 
 [data]
 MatrixRenderingFile = "data/ascii-art.txt"

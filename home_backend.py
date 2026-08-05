@@ -465,6 +465,8 @@ class SectorEightHome:
             if gl_color == self.background:
                 self.change_theme(dict_key)
         
+        self.max_scroll = -(self.theme_dropdown.y - 700)
+        
         self.add_multiple_elements(self.side_panel_user_ui, 
                                    self.user_img, self.user_label)
         self.add_multiple_elements(self.side_panel_btn_list,

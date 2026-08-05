@@ -3,7 +3,8 @@ import statistics, random
 import datetime
 from typing import Any
 from session_manager import SessionManager
-
+from subprocess import Popen
+import sys
 class SectorEightRecommendations:
     def __init__(self):
         self.session_obj = SessionManager()
@@ -14,6 +15,7 @@ class SectorEightRecommendations:
             shelve.open(f'data\\temp\\log\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}')
         else:
             Popen(["auth_launch.cmd"])
+            sys.exit()
         self.log: list[str] = self.log_store.get('log', list())
         
     def get_item_history(self) -> list[str]:
