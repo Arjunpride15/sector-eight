@@ -33,6 +33,11 @@ def on_mouse_scroll(x, y, scroll_x, scroll_y):
             settings_obj.offset_y += move
             for sprite in settings_obj.scroll_objects:
                 sprite.y += move
+
+@window.event
+def on_mouse_press(x, y, button, modifiers):
+    settings_obj.handle_mouse_click(x, y, button, modifiers)
+    
 @window.event
 def on_close():
     settings_obj.stop_music()

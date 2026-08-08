@@ -791,3 +791,141 @@ class TextBox:
             except Exception:
                 ...
         
+
+class Card:
+
+    """A customizable UI Card container using pyglet.shapes.RoundedRectangle,
+
+    with a header label and body label. Works seamlessly with property-based
+    positioning (e.g. `card.y += move` during scrolling).
+    """
+
+    def __init__(
+        self,
+        x,
+        y,
+        width,
+        height,
+        header_text="Card Header",
+        body_text="Card body text...",
+        radius=12,
+        bg_color=(35, 40, 70),
+        header_color=(255, 255, 255, 255),
+        body_color=(210, 215, 230, 255),
+        header_font_size=24,
+        body_font_size=14,
+        font_name=("Open Sans", "Segoe UI Emoji"),
+        padding=20,
+        batch=None,
+        group=None,
+    ):
+        self._x = x
+        self._y = y
+        self._width = width
+        self._height = height
+        self._radius = radius
+        self._padding = padding
+        self._visible = True
+
+        self.batch = batch
+        self.group = group
+
+        # 1. Background Shape
+        self.background = pyglet.shapes.RoundedRectangle(
+            x=self._x,
+            y=self._y,
+            width=self._width,
+            height=self._height,
+            radius=self._radius,
+            color=bg_color[:3],
+            batch=self.batch,
+            group=self.group,
+        )
+
+        content_width = self._width - (self._padding * 2)
+
+        # 2. Header Label
+        header_y = self._y + self._height - self._padding
+        self.header_label = pyglet.text.Label(
+            header_text,
+            font_name=font_name,
+            font_size=header_font_size,
+            color=header_color,
+            x=self._x + self._padding,
+            y=header_y,
+            anchor_x="left",
+            anchor_y="top",
+            width=content_width,
+            multiline=True,
+            batch=self.batch,
+            group=self.group,
+        )
+
+        # 3. Body Label
+        body_y = header_y - self.header_label.content_height - 12
+        self.body_label = pyglet.text.Label(
+            body_text,
+            font_name=font_name,
+            font_size=body_font_size,
+            color=body_color,
+            x=self._x + self._padding,
+            y=body_y,
+            anchor_x="left",
+            anchor_y="top",
+            width=content_width,
+            multiline=True,
+            batch=self.batch,
+            group=self.group,
+        )
+
+    # -------------------------------------------------------------------------
+    # Properties for Scrolling & Position Manipulation
+    # -------------------------------------------------------------------------
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, value):
+        dx = value - self._x
+        self._x = value
+        self.background.x = self._x
+        self.header_label.x += dx
+        self.body_label.x += dx
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        dy = value - self._y
+        self._y = value
+        self.background.y = self._y
+        self.header_label.y += dy
+        self.body_label.y += dy
+
+    @property
+    def visible(self):
+        return self._visible
+
+    @visible.setter
+    def visible(self, value: bool):
+        self._visible = value
+        self.background.visible = value
+        self.header_label.visible = value
+        self.body_label.visible = value
+
+    @property
+    def width(self):
+        return self._width
+
+    @property
+    def height(self):
+        return self._height
+
+    def delete(self):
+        """Clean up Pyglet graphics objects."""
+        self.background.delete()
+        self.header_label.delete()
+        self.body_label.delete()

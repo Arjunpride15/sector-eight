@@ -14,6 +14,9 @@ import datetime, time
 import pyglet.shapes
 from argon2 import PasswordHasher
 from session_manager import SessionManager
+import logging
+import sys
+import box, os_version_query
 
 class SectorEightSettings:
     def __init__(self, window):
@@ -21,6 +24,7 @@ class SectorEightSettings:
         self.interface = pyglet.graphics.Batch()
         self.header_interface = pyglet.graphics.Batch()
         self.mask_interface = pyglet.graphics.Batch()
+        logging.basicConfig(format=" Log: %(asctime)s - %(levelname)s - %(message)s")
         self.session_manager_obj = SessionManager()
         self.active_user = self.session_manager_obj.get_active_user()
         self.obfuscator_obj = obfuscator.PseudoEncryptor()
@@ -38,6 +42,7 @@ class SectorEightSettings:
         pyglet.options['search_local_libs'] = True
         pyglet.font.add_file('fonts/OpenSans-Regular.ttf')
         self.configObj = conf.Config()
+        self.dotted_config_access = box.Box(self.configObj.toml_dict)
         self.music_switch = False
         self.vruler = None
         self.ruler = None
@@ -48,7 +53,8 @@ class SectorEightSettings:
                                pyglet.shapes.Line, 
                                utilities.Badge,
                                utilities.DropDownMenu,
-                               utilities.Button)
+                               utilities.Button,
+                               utilities.Card)
         self.offset_y = 0
         self.min_scroll = 0
         self.max_scroll = 10000
@@ -56,6 +62,11 @@ class SectorEightSettings:
         self.main_view = True
         self.about_button = None
         self.big_welcome = None
+        self.about_logo = None
+        self.about_card_main = None
+        self.license_card = None
+        self.about_list = list()
+        
         
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
@@ -82,6 +93,58 @@ class SectorEightSettings:
     def stop_music(self):
         winsound.PlaySound(None, winsound.SND_FILENAME)
         self.music_switch = False
+    
+    def handle_mouse_click(self, x, y, button, modifiers):
+        if self.about_button.is_clicked(x, y):
+            self.show_about_panel()
+            self.big_welcome.visible = False
+    
+    def show_about_panel(self):
+        if len(self.about_list) != 0:
+            return
+        logging.info("Handled!")
+        about_img = pyglet.resource.image("images/logo.png")
+        self.about_logo = pyglet.sprite.Sprite(about_img,
+                                               x=self.vruler.x + 140,
+                                               y=140, batch=self.interface)
+        
+        card_text = \
+        f"""
+        Sector Eight Version: {self.dotted_config_access.version.SectorEightVersion}
+        
+        Operating System: {os_version_query.get_detailed_os_name()}
+        
+        CPU: {os_version_query.get_cpu_info()}
+        
+        GPU: {pyglet.gl.gl_info.get_renderer()}
+        
+        OpenGL Version: {pyglet.gl.gl_info.get_version()[0]}.{pyglet.gl.gl_info.get_version()[1]}
+        """
+        card_height = 600
+        self.about_card_main = utilities.Card(self.about_logo.x - 100,
+                                              self.about_logo.y - card_height - 100, 1000,
+                                              card_height, batch=self.interface,
+                                              header_font_size=30, body_font_size=20,
+                                              header_text="General Info",
+                                              body_text=card_text)
+        with open(self.dotted_config_access.license_info.LicensePath, "r") as f:
+            license_text = f.read()
+        
+        license_card_height = 4320
+        self.license_card = utilities.Card(self.about_card_main.x,
+                                           self.about_card_main.y - license_card_height - 100,
+                                           1000, license_card_height, header_text="Apache License, Version 2.0",
+                                           body_text=license_text,
+                                           batch=self.interface, font_name=["Georgia", "serif"])
+        self.add_scrolllist(
+            [
+                self.about_logo,
+                self.about_card_main,
+                self.license_card
+            ]
+        )
+        self.about_list.append(self.about_logo)
+        self.about_list.append(self.license_card)
     
     def init_window(self):
         self.welcome_label = pyglet.text.Label(f'Welcome, {self.active_user}!', 
@@ -142,3 +205,4 @@ class SectorEightSettings:
         self.play()
         pyglet.clock.schedule_interval(self.update, 1/60)
         pyglet.app.run()
+        logging.disable(logging.WARNING)

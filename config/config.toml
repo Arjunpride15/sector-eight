@@ -27,6 +27,10 @@ settingsBackground = "audio/settings_music.wav"
 [data]
 MatrixRenderingFile = "data/ascii-art.txt"
 
+[version]
+SectorEightVersion = "Sector Eight 1.0.0 Beta Development"
+
+
 [font]
 fontList = ['Cascadia Mono', 'Cascadia Code','Courier New'] # Font fallback sequence
 emojiFont = "Segoe UI Emoji"
