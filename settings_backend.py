@@ -65,8 +65,23 @@ class SectorEightSettings:
         self.about_logo = None
         self.about_card_main = None
         self.license_card = None
+        self.license_btn = None
+        self.num_times_license_btn_clicked = 0
         self.about_list = list()
-        
+        with open(self.dotted_config_access.license_info.LicensePath, "r") as f:
+            self.license_text = f.read()
+        self.current_panel = "welcome"
+        self.performance_btn = None
+        self.fps_dropdown = None
+        self.fps_heading = None
+        self.max_fps_checker_obj = os_version_query.SystemCapabilityCheckerFor120FPS(self.window)
+        self.fps_120_capable = self.max_fps_checker_obj.evaluate_120fps_support()["can_enable_120fps"]
+        #print(self.fps_120_capable, self.max_fps_checker_obj.evaluate_120fps_support()["hardware_details"])
+        if self.fps_120_capable:
+            self.fps_list = [30, 60, 120]
+        else:
+            self.fps_list = [30, 60]
+        self.performance_list = list()
         
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
@@ -95,12 +110,43 @@ class SectorEightSettings:
         self.music_switch = False
     
     def handle_mouse_click(self, x, y, button, modifiers):
-        if self.about_button.is_clicked(x, y):
-            self.show_about_panel()
-            self.big_welcome.visible = False
+        if button == mouse.LEFT:
+            if self.fps_dropdown:
+                self.fps_dropdown.on_mouse_press(x, y, button, modifiers)
+            if self.about_button.is_clicked(x, y):
+                if not self.current_panel == "about":
+                    self.destroy_panel()
+                self.show_about_panel()
+            if self.license_btn:
+                if self.license_btn.is_clicked(x, y):
+                    self.toggle_license_card_visibility()
+            if self.performance_btn.is_clicked(x, y):
+                if not self.current_panel == "performance":
+                    self.destroy_panel()
+                self.show_performance_panel()
+    
+    def toggle_license_card_visibility(self):
+        if self.num_times_license_btn_clicked % 2 == 0:
+             license_card_height = 4320
+             self.license_card = utilities.Card(self.about_card_main.x,
+                                            self.about_card_main.y - license_card_height - 100,
+                                            1000, license_card_height, header_text="Apache License, Version 2.0",
+                                            body_text=self.license_text,
+                                            batch=self.interface, font_name=["Georgia", "serif"])
+             self.license_btn.label.text = "Hide License ^"
+             self.add_scrolllist(self.license_card)
+             self.about_list.append(self.license_card)
+             self.num_times_license_btn_clicked += 1
+        else:
+            self.scroll_objects.remove(self.license_card)
+            self.about_list.remove(self.license_card)
+            self.license_card.delete()
+            self.license_card = None
+            self.license_btn.label.text = "Show License ⏑"
+            self.num_times_license_btn_clicked += 1
     
     def show_about_panel(self):
-        if len(self.about_list) != 0:
+        if self.current_panel == "about":
             return
         logging.info("Handled!")
         about_img = pyglet.resource.image("images/logo.png")
@@ -127,25 +173,73 @@ class SectorEightSettings:
                                               header_font_size=30, body_font_size=20,
                                               header_text="General Info",
                                               body_text=card_text)
-        with open(self.dotted_config_access.license_info.LicensePath, "r") as f:
-            license_text = f.read()
+        self.license_btn = utilities.Button("Show License ⏑", self.about_card_main.x,
+                                            self.about_card_main.y - 80, 
+                                            self.about_card_main.width, 40, self.interface, (35, 40, 70))
         
-        license_card_height = 4320
-        self.license_card = utilities.Card(self.about_card_main.x,
-                                           self.about_card_main.y - license_card_height - 100,
-                                           1000, license_card_height, header_text="Apache License, Version 2.0",
-                                           body_text=license_text,
-                                           batch=self.interface, font_name=["Georgia", "serif"])
         self.add_scrolllist(
             [
                 self.about_logo,
                 self.about_card_main,
-                self.license_card
+                self.license_btn
+                
             ]
         )
         self.about_list.append(self.about_logo)
-        self.about_list.append(self.license_card)
+        self.about_list.append(self.about_card_main)
+        self.about_list.append(self.license_btn)
+        self.current_panel = "about"
     
+    def show_performance_panel(self):
+        if self.current_panel == "performance":
+            return
+        self.fps_heading = pyglet.text.Label(
+            text="FPS Settings", x=self.vruler.x + 30,
+            y=self.ruler.y - 50, font_size=30, font_name="Open Sans",
+            batch=self.interface
+        )
+        fps_options = [f"{fps_num} FPS" for fps_num in self.fps_list]
+        
+        self.fps_dropdown = utilities.DropDownMenu(
+            self.window, self.fps_heading.x, self.fps_heading.y - 100, 200, 40,
+            fps_options, default_index=1, batch=self.interface
+        )
+        self.add_scrolllist(
+            [
+                self.fps_heading,
+                self.fps_dropdown
+            ]
+        )
+        self.current_panel = "performance"
+        self.performance_list.append(self.fps_heading)
+        self.performance_list.append(self.fps_dropdown)
+    def destroy_panel(self):
+        self.big_welcome.visible = False
+        try:
+            for i, item in enumerate(self.about_list.copy()):
+                if item:
+                    item.delete()
+                try:
+                    self.scroll_objects.remove(item)
+                except ValueError:
+                    ...
+            self.about_list.clear()
+            self.current_panel = None
+            self.num_times_license_btn_clicked = 0
+        except AttributeError:
+            ...
+        try:
+            for i, item in enumerate(self.performance_list.copy()):
+                if item:
+                    item.delete()
+                try:
+                    self.scroll_objects.remove(item)
+                except ValueError:
+                    ...
+            self.about_list.clear()
+            self.current_panel = None    
+        except AttributeError:
+            ...
     def init_window(self):
         self.welcome_label = pyglet.text.Label(f'Welcome, {self.active_user}!', 
                                               font_name="Open Sans", 
@@ -193,6 +287,10 @@ class SectorEightSettings:
                                             )
         self.about_button = utilities.Button("\u2139 About", 10, 30, vruler_x - 10 - 10,
                                              40, self.interface, (0, 229, 255))
+        self.performance_btn = utilities.Button("\u26a1 Performance", self.about_button.x,
+                                                self.about_button.y + self.about_button.height + 30,
+                                                self.about_button.width, self.about_button.height,
+                                                self.interface, (0, 230, 118, 255))
         
         self.add_scrolllist(
             [

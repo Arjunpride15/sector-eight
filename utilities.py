@@ -634,6 +634,11 @@ class DropDownMenu:
             return True
             
         return False
+    def delete(self):
+        for shape in self.shapes.copy():
+            shape.delete()
+        for label in self.labels:
+            label.delete()
 
 class CyclicBadge:
     def __init__(self, num_elements):

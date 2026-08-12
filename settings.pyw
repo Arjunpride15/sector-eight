@@ -37,7 +37,11 @@ def on_mouse_scroll(x, y, scroll_x, scroll_y):
 @window.event
 def on_mouse_press(x, y, button, modifiers):
     settings_obj.handle_mouse_click(x, y, button, modifiers)
-    
+
+@window.event
+def on_mouse_motion(x, y, dx, dy):
+    if settings_obj.fps_dropdown:
+        settings_obj.fps_dropdown.on_mouse_motion(x, y, dx, dy)
 @window.event
 def on_close():
     settings_obj.stop_music()
