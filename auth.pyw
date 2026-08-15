@@ -5,7 +5,6 @@ import auth_backend
 window = pyglet.window.Window(width=950, height=900, 
                               caption="Authentication Manager | Sector 8", style="dialog")
 pyglet.gl.glClearColor(0.2, 0.2, 0.35, 1)
-window.set_vsync(True)
 screen = window.display.get_default_screen()
 x_pos = (screen.width - window.width) // 2
 y_pos = (screen.height - window.height) // 2
@@ -14,6 +13,8 @@ window.set_location(x_pos, y_pos)
 #icon_32 = pyglet.image.load('images/icon-32.png')
 #window.set_icon(icon_16, icon_32)
 auth_obj = auth_backend.SectorEightAuthManager(window)
+if auth_obj.configObj.toml_dict["performance"]["VSync"]:
+    window.set_vsync(True)
 auth_obj.init_window()
 @window.event
 def on_draw():

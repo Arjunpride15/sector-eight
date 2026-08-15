@@ -934,3 +934,143 @@ class Card:
         self.background.delete()
         self.header_label.delete()
         self.body_label.delete()
+
+class ToggleButton:
+    """
+    A modern, customizable pill-style Toggle/Switch control for Pyglet.
+    Fully compatible with vertical scroll lists via dynamic property setters.
+    """
+    def __init__(
+        self,
+        x: float,
+        y: float,
+        width: float = 64,
+        height: float = 32,
+        text: str = "",
+        is_on: bool = False,
+        batch: pyglet.graphics.Batch = None,
+        on_toggle: callable = None,
+        on_color: tuple = (0, 230, 118),       # Active accent (Emerald/Neon Green)
+        off_color: tuple = (60, 65, 85),       # Inactive background
+        knob_color: tuple = (255, 255, 255),   # Knob color
+        text_color: tuple = (255, 255, 255, 255),
+        font_name: str = "Open Sans",
+        font_size: int = 16,
+    ):
+        self._x = x
+        self._y = y
+        self.width = width
+        self.height = height
+        self.text = text
+        self.is_on = is_on
+        self.on_toggle = on_toggle
+        
+        self.on_color = on_color
+        self.off_color = off_color
+        self.knob_color = knob_color
+        self.batch = batch
+        
+        # Calculate knob metrics
+        self.padding = 3
+        self.knob_radius = (self.height - (self.padding * 2)) / 2
+        
+        # 1. Background Switch Capsule Body
+        bg_color = self.on_color if self.is_on else self.off_color
+        self.bg_rect = pyglet.shapes.RoundedRectangle(
+            self._x, self._y, self.width, self.height,
+            radius=self.knob_radius,
+            color=bg_color, batch=self.batch
+        )
+        
+        # 2. Sliding Circle Knob
+        knob_x = self._get_knob_target_x()
+        knob_y = self._y + (self.height / 2)
+        self.knob = pyglet.shapes.Circle(
+            knob_x, knob_y, self.knob_radius,
+            color=self.knob_color, batch=self.batch
+        )
+        
+        # 3. Label Text (Optional)
+        self.label = None
+        if self.text:
+            self.label = pyglet.text.Label(
+                self.text,
+                font_name=font_name,
+                font_size=font_size,
+                x=self._x + self.width + 16,
+                y=self._y + (self.height / 2),
+                anchor_x='left',
+                anchor_y='center',
+                color=text_color,
+                batch=self.batch
+            )
+
+    def _get_knob_target_x(self) -> float:
+        """Calculates center X position for the knob based on state."""
+        if self.is_on:
+            return self._x + self.width - self.knob_radius - self.padding
+        return self._x + self.knob_radius + self.padding
+
+    # -------------------------------------------------------------------------
+    # Scroll Engine Compatibility (Property Getters & Setters)
+    # -------------------------------------------------------------------------
+    @property
+    def x(self) -> float:
+        return self._x
+
+    @x.setter
+    def x(self, value: float):
+        dx = value - self._x
+        self._x = value
+        self.bg_rect.x += dx
+        self.knob.x += dx
+        if self.label:
+            self.label.x += dx
+
+    @property
+    def y(self) -> float:
+        return self._y
+
+    @y.setter
+    def y(self, value: float):
+        """Dynamic Y setter: Moves internal shapes smoothly during scroll events."""
+        dy = value - self._y
+        self._y = value
+        self.bg_rect.y += dy
+        self.knob.y += dy
+        if self.label:
+            self.label.y += dy
+
+    # -------------------------------------------------------------------------
+    # Interactivity & Event Handlers
+    # -------------------------------------------------------------------------
+    def is_clicked(self, mouse_x: float, mouse_y: float) -> bool:
+        """Bounding box click verification."""
+        total_width = self.width + (self.label.content_width + 16 if self.label else 0)
+        return (self._x <= mouse_x <= self._x + total_width and 
+                self._y <= mouse_y <= self._y + self.height)
+
+    def toggle(self):
+        """Flips state, updates visual shapes, and invokes callback."""
+        self.is_on = not self.is_on
+        self.bg_rect.color = self.on_color if self.is_on else self.off_color
+        self.knob.x = self._get_knob_target_x()
+        
+        if callable(self.on_toggle):
+            self.on_toggle(self.is_on)
+
+    def on_mouse_press(self, x: float, y: float, button: int, modifiers: int) -> bool:
+        """Pyglet event listener helper."""
+        if button == pyglet.window.mouse.LEFT and self.is_clicked(x, y):
+            self.toggle()
+            return True
+        return False
+
+    def delete(self):
+        """Cleans up batch shapes when panel is destroyed."""
+        if self.bg_rect:
+            self.bg_rect.delete()
+        if self.knob:
+            self.knob.delete()
+        if self.label:
+            self.label.delete()

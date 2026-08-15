@@ -101,6 +101,7 @@ class SectorEight:
         self.shop_button = None
         self.query_button = None
         self.restart_emoji_button = None
+        self.fps = self.confObj.toml_dict["performance"]["FPS"]
         
               
     def canvas_init(self):
@@ -838,17 +839,23 @@ class SectorEight:
         Popen(["unilaunch.cmd", "-gs"])
     def open_query(self):
         raise NotImplementedWarning('Query Button Clicked')
+    
+    def force_rendering(self, dt):
+        
+        self.WINDOW.invalid = True
+        
     def start_(self):
         # Enable Blending for transparency
         import pyglet.gl as gl
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         self.change_personality(1)
-        pyglet.clock.schedule_interval(self.update, 1/60.0)
-        pyglet.clock.schedule_interval(self.ghost_update, 1/60.0)
+        pyglet.clock.schedule_interval(self.force_rendering, 1/self.fps)
+        pyglet.clock.schedule_interval(self.update, 1/self.fps)
+        pyglet.clock.schedule_interval(self.ghost_update, 1/self.fps)
         pyglet.clock.schedule_interval(self.fire_laser, 2.0)
         pyglet.clock.schedule_interval(self.change_personality, 10)
         pyglet.clock.schedule_interval(self.blit_random_coin, 30)
-        pyglet.clock.schedule_interval(self.check_state, 1/60)
+        pyglet.clock.schedule_interval(self.check_state, 1/self.fps)
         self.play_main_music_file(self)
         pyglet.app.run()

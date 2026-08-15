@@ -54,7 +54,8 @@ class SectorEightSettings:
                                utilities.Badge,
                                utilities.DropDownMenu,
                                utilities.Button,
-                               utilities.Card)
+                               utilities.Card,
+                               utilities.ToggleButton)
         self.offset_y = 0
         self.min_scroll = 0
         self.max_scroll = 10000
@@ -74,6 +75,7 @@ class SectorEightSettings:
         self.performance_btn = None
         self.fps_dropdown = None
         self.fps_heading = None
+        self.fps_label = None
         self.max_fps_checker_obj = os_version_query.SystemCapabilityCheckerFor120FPS(self.window)
         self.fps_120_capable = self.max_fps_checker_obj.evaluate_120fps_support()["can_enable_120fps"]
         #print(self.fps_120_capable, self.max_fps_checker_obj.evaluate_120fps_support()["hardware_details"])
@@ -82,6 +84,8 @@ class SectorEightSettings:
         else:
             self.fps_list = [30, 60]
         self.performance_list = list()
+        self.default_fps_index = self.fps_list.index(self.dotted_config_access.performance.FPS)
+        self.vsync_toggle_btn = None
         
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
@@ -124,6 +128,8 @@ class SectorEightSettings:
                 if not self.current_panel == "performance":
                     self.destroy_panel()
                 self.show_performance_panel()
+            if self.vsync_toggle_btn:
+                self.vsync_toggle_btn.on_mouse_press(x, y, button, modifiers)
     
     def toggle_license_card_visibility(self):
         if self.num_times_license_btn_clicked % 2 == 0:
@@ -190,29 +196,56 @@ class SectorEightSettings:
         self.about_list.append(self.license_btn)
         self.current_panel = "about"
     
+    def turn_vsync_on_or_off(self, state: bool):
+        self.dotted_config_access.performance.VSync = state
+        self.configObj.toml_dict = self.dotted_config_access.to_dict()
+        self.configObj.sync()
     def show_performance_panel(self):
         if self.current_panel == "performance":
             return
+        
         self.fps_heading = pyglet.text.Label(
-            text="FPS Settings", x=self.vruler.x + 30,
+            text="FPS and VSync Settings", x=self.vruler.x + 30,
             y=self.ruler.y - 50, font_size=30, font_name="Open Sans",
             batch=self.interface
         )
         fps_options = [f"{fps_num} FPS" for fps_num in self.fps_list]
         
+        self.fps_label = pyglet.text.Label(
+            "FPS: ", self.fps_heading.x, self.fps_heading.y - 100,
+            font_name="Open Sans", font_size=20, batch=self.interface,
+            color=(255, 255, 255)
+        )
         self.fps_dropdown = utilities.DropDownMenu(
-            self.window, self.fps_heading.x, self.fps_heading.y - 100, 200, 40,
-            fps_options, default_index=1, batch=self.interface
+            self.window, self.fps_label.x + 70, self.fps_label.y - 10, 200, 40,
+            fps_options, default_index=self.default_fps_index, batch=self.interface, on_select=self.set_fps
+        )
+        
+        self.vsync_toggle_btn = utilities.ToggleButton(
+            x=self.fps_label.x, y=self.fps_label.y - 130,
+            text="VSync On/Off", is_on=self.dotted_config_access.performance.VSync, 
+            batch=self.interface,
+            on_toggle=self.turn_vsync_on_or_off,
+            on_color=(0, 240, 255, 255)
         )
         self.add_scrolllist(
             [
                 self.fps_heading,
-                self.fps_dropdown
+                self.fps_dropdown,
+                self.vsync_toggle_btn
             ]
         )
         self.current_panel = "performance"
         self.performance_list.append(self.fps_heading)
         self.performance_list.append(self.fps_dropdown)
+        self.performance_list.append(self.vsync_toggle_btn)
+    
+    def set_fps(self, fps: str):
+        fps = int(fps.strip(" FPS"))
+        self.dotted_config_access.performance.FPS = fps
+        self.configObj.toml_dict = self.dotted_config_access.to_dict()
+        self.configObj.sync()
+        #print(fps)
     def destroy_panel(self):
         self.big_welcome.visible = False
         try:
@@ -236,7 +269,7 @@ class SectorEightSettings:
                     self.scroll_objects.remove(item)
                 except ValueError:
                     ...
-            self.about_list.clear()
+            self.performance_list.clear()
             self.current_panel = None    
         except AttributeError:
             ...

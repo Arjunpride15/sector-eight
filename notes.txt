@@ -1,0 +1,16 @@
+ℹ️ Note: This is a non-critical Sector Eight file.
+
+15-08-2026
+
+1. One Python REPL session:
+
+    >>> import box
+    >>> d = {"hi": True, "bye": False}
+    >>> d_dotted = box.Box(d)
+    >>> d_dotted.hi = False
+    >>> d
+    {'hi': True, 'bye': False}
+    >>> d_dotted
+    Box({'hi': False, 'bye': False})
+    >>> dict(d_dotted)
+    {'hi': False, 'bye': False}

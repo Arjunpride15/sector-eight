@@ -1,4 +1,4 @@
-import tomli
+import tomli, tomli_w
 
 class Config:
     """
@@ -14,6 +14,10 @@ class Config:
             self.toml_dict = tomli.load(f)
     def main_music_path(self):
         return self.toml_dict['music']['background']
+    
+    def sync(self):
+        with open("config/config.toml", "wb") as file:
+            tomli_w.dump(self.toml_dict, file)
     
                 
     

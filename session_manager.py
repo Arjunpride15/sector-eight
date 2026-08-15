@@ -44,6 +44,9 @@ class SessionManager:
         """Logs out the active user by deleting the session record."""
         
         if self.current_session:
+            with shelve.open(f'data\\temp\\miscn\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}') as f:
+                    f["claimed"] = False
+                    f.sync()
             self.current_session = None
             self.sync_data("current_session", self.current_session)
     
@@ -52,7 +55,11 @@ class SessionManager:
             current_time = datetime.now()
             self.last_session = datetime.fromtimestamp(self.current_session.get("login_time", time.time()))
             if current_time - self.last_session > self.max_session_time:
+                with shelve.open(f'data\\temp\\miscn\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}') as f:
+                    f["claimed"] = False
+                    f.sync()
                 self.clear_session()
+                
             
     def cleanup(self):
         self.db.close()
