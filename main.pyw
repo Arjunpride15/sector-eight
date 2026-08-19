@@ -30,6 +30,19 @@ window.set_location(x_pos, y_pos)
 se = canvas.SectorEight(window)
 if se.confObj.toml_dict["performance"]["VSync"]:
     window.set_vsync(True)
+else:
+    window.set_vsync(False)
+
+texture_scaling_setting = se.confObj.toml_dict["performance"]["TextureScaling"]
+texture_scaling_dict = \
+{
+    "Nearest-Neighbor": pyglet.gl.GL_NEAREST,
+    "Bilinear Interpolation": pyglet.gl.GL_LINEAR,
+    "Trilinear Mipmapping": pyglet.gl.GL_LINEAR_MIPMAP_LINEAR
+}
+pyglet.image.Texture.default_min_filter = \
+    pyglet.image.Texture.default_mag_filter = \
+        texture_scaling_dict[se.confObj.toml_dict["performance"]["TextureScaling"]]
     
 se.canvas_init() 
 @window.event

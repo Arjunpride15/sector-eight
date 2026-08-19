@@ -33,6 +33,7 @@ SectorEightVersion = "Sector Eight 1.0.0 Beta Development"
 [performance]
 FPS = 60
 VSync = true
+TextureScaling = "Nearest-Neighbor"
 
 [font]
 fontList = [

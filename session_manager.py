@@ -1,13 +1,13 @@
 import shelve
 import time
 from datetime import datetime, timedelta
-import atexit, pyglet
+import atexit, pyglet, obfuscator
 
 
 class SessionManager:
     def __init__(self, auto_clean=True):    
         self.db = shelve.open("data\\sessions")
-        
+        self.obfuscator_obj = obfuscator.PseudoEncryptor()
         self.current_session = self.db.get("current_session", None)
         self.max_session_time = timedelta(hours=16)
         
@@ -44,7 +44,7 @@ class SessionManager:
         """Logs out the active user by deleting the session record."""
         
         if self.current_session:
-            with shelve.open(f'data\\temp\\miscn\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}') as f:
+            with shelve.open(f'data\\temp\\miscn\\{self.obfuscator_obj.obfuscate_filename(self.get_active_user())}') as f:
                     f["claimed"] = False
                     f.sync()
             self.current_session = None
@@ -55,7 +55,7 @@ class SessionManager:
             current_time = datetime.now()
             self.last_session = datetime.fromtimestamp(self.current_session.get("login_time", time.time()))
             if current_time - self.last_session > self.max_session_time:
-                with shelve.open(f'data\\temp\\miscn\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}') as f:
+                with shelve.open(f'data\\temp\\miscn\\{self.obfuscator_obj.obfuscate_filename(self.get_active_user())}') as f:
                     f["claimed"] = False
                     f.sync()
                 self.clear_session()

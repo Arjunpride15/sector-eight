@@ -15,6 +15,8 @@ window.set_location(x_pos, y_pos)
 auth_obj = auth_backend.SectorEightAuthManager(window)
 if auth_obj.configObj.toml_dict["performance"]["VSync"]:
     window.set_vsync(True)
+else:
+    window.set_vsync(False)  
 auth_obj.init_window()
 @window.event
 def on_draw():

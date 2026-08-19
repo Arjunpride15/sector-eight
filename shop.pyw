@@ -16,6 +16,8 @@ shop_instance = shop_backend.SectorEightShop(window)
 
 if shop_instance.configObj.toml_dict["performance"]["VSync"]:
     window.set_vsync(True)
+else:
+    window.set_vsync(False) 
 shop_instance.init_window()
 @window.event
 def on_draw():

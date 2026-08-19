@@ -14,6 +14,8 @@ window.set_location(x_pos, y_pos)
 home_obj = home_backend.SectorEightHome(window)
 if home_obj.configObj.toml_dict["performance"]["VSync"]:
     window.set_vsync(True)
+else:
+    window.set_vsync(False) 
 home_obj.init_window()
 #print(home_obj.theme_backgrounds.values())
 @window.event

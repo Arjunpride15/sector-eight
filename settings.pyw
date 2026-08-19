@@ -10,7 +10,9 @@ window.set_location(x_pos, y_pos)
 
 settings_obj = settings_backend.SectorEightSettings(window)
 if settings_obj.configObj.toml_dict["performance"]["VSync"]:
-    window.set_vsync(True)    
+    window.set_vsync(True)
+else:
+    window.set_vsync(False)  
 settings_obj.init_window() 
 @window.event
 def on_draw():
@@ -42,6 +44,8 @@ def on_mouse_press(x, y, button, modifiers):
 def on_mouse_motion(x, y, dx, dy):
     if settings_obj.fps_dropdown:
         settings_obj.fps_dropdown.on_mouse_motion(x, y, dx, dy)
+    if settings_obj.texture_scaling_dropdown:
+        settings_obj.texture_scaling_dropdown.on_mouse_motion(x, y, dx, dy)
 @window.event
 def on_close():
     settings_obj.stop_music()

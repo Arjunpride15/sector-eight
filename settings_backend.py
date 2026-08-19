@@ -86,7 +86,16 @@ class SectorEightSettings:
         self.performance_list = list()
         self.default_fps_index = self.fps_list.index(self.dotted_config_access.performance.FPS)
         self.vsync_toggle_btn = None
-        
+        self.texture_scaling_dropdown = None
+        self.texture_scaling_dropdown_options = [
+            "Nearest-Neighbor",
+            "Bilinear Interpolation",
+            "Trilinear Mipmapping"
+        ]
+        self.texture_scaling_label = None
+        self.opengl_advanced_settings_heading = None
+        self.default_texture_scaling_index = \
+            self.texture_scaling_dropdown_options.index(self.dotted_config_access.performance.TextureScaling)
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
             self.scroll_objects.append(element)
@@ -117,6 +126,8 @@ class SectorEightSettings:
         if button == mouse.LEFT:
             if self.fps_dropdown:
                 self.fps_dropdown.on_mouse_press(x, y, button, modifiers)
+            if self.texture_scaling_dropdown:
+                self.texture_scaling_dropdown.on_mouse_press(x, y, button, modifiers)
             if self.about_button.is_clicked(x, y):
                 if not self.current_panel == "about":
                     self.destroy_panel()
@@ -217,7 +228,7 @@ class SectorEightSettings:
             color=(255, 255, 255)
         )
         self.fps_dropdown = utilities.DropDownMenu(
-            self.window, self.fps_label.x + 70, self.fps_label.y - 10, 200, 40,
+            self.window, self.fps_label.x + 70, self.fps_label.y - 10, 280, 40,
             fps_options, default_index=self.default_fps_index, batch=self.interface, on_select=self.set_fps
         )
         
@@ -228,24 +239,54 @@ class SectorEightSettings:
             on_toggle=self.turn_vsync_on_or_off,
             on_color=(0, 240, 255, 255)
         )
+        
+        self.opengl_advanced_settings_heading = pyglet.text.Label(
+            text="Advanced OpenGL Graphics Settings", x=self.vsync_toggle_btn.x, 
+            y=self.vsync_toggle_btn.y - 90, 
+            font_size=30, font_name="Open Sans",
+            batch=self.interface
+        )
+        self.texture_scaling_label = pyglet.text.Label(
+            text="Texture Scaling: ", x=self.opengl_advanced_settings_heading.x, 
+            y=self.opengl_advanced_settings_heading.y - 90,
+            font_name="Open Sans", font_size=20, batch=self.interface
+            
+        )
+        self.texture_scaling_dropdown = utilities.DropDownMenu(
+            self.window, x=self.texture_scaling_label.x + 230, y=self.texture_scaling_label.y - 10,
+            width=280, height=40, options=self.texture_scaling_dropdown_options,
+            batch=self.interface, on_select=self.change_texture_scaling_mode, 
+            default_index=self.default_texture_scaling_index
+        )
         self.add_scrolllist(
             [
                 self.fps_heading,
                 self.fps_dropdown,
-                self.vsync_toggle_btn
+                self.fps_label,
+                self.vsync_toggle_btn,
+                self.texture_scaling_dropdown,
+                self.texture_scaling_label,
+                self.opengl_advanced_settings_heading
             ]
         )
         self.current_panel = "performance"
         self.performance_list.append(self.fps_heading)
         self.performance_list.append(self.fps_dropdown)
         self.performance_list.append(self.vsync_toggle_btn)
-    
+        self.performance_list.append(self.texture_scaling_dropdown)
+        self.performance_list.append(self.texture_scaling_label)
+        self.performance_list.append(self.opengl_advanced_settings_heading)
     def set_fps(self, fps: str):
         fps = int(fps.strip(" FPS"))
         self.dotted_config_access.performance.FPS = fps
         self.configObj.toml_dict = self.dotted_config_access.to_dict()
         self.configObj.sync()
         #print(fps)
+    
+    def change_texture_scaling_mode(self, texture_scaling_str):
+        self.dotted_config_access.performance.TextureScaling = texture_scaling_str
+        self.configObj.toml_dict = self.dotted_config_access.to_dict()
+        self.configObj.sync()
     def destroy_panel(self):
         self.big_welcome.visible = False
         try:
