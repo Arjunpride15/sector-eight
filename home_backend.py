@@ -342,9 +342,14 @@ class SectorEightHome:
             x=0, y=ruler_y, width=self.window.width, height=self.window.width - ruler_y,
             color=utilities.convertGLtoRGBA(*self.background), batch=self.mask_interface
         )
-        
-        self.user_img = pyglet.sprite.Sprite(pyglet.resource.image("images/user.png"), x=50.0, y=self.ruler.y - 130,
-                                             batch=self.interface)
+        try:
+            self.user_img = pyglet.sprite.Sprite(pyglet.resource.image(f"images/{self.obfuscator_obj.obfuscate_filename(self.active_user)}.tif"), 
+                                                x=50.0, y=self.ruler.y - 130,
+                                                batch=self.interface)
+        except pyglet.resource.ResourceNotFoundException:
+            self.user_img = pyglet.sprite.Sprite(pyglet.resource.image(f"images/user.png"), 
+                                                x=50.0, y=self.ruler.y - 130,
+                                                batch=self.interface)
         self.user_img.opacity = 0
         self.avatar_tint = pyglet.shapes.Rectangle(x=self.user_img.x, 
                                                    y=self.user_img.y,

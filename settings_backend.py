@@ -17,6 +17,9 @@ from session_manager import SessionManager
 import logging
 import sys
 import box, os_version_query
+import tkinter as tk
+from tkinter import filedialog
+from PIL import Image
 
 class SectorEightSettings:
     def __init__(self, window):
@@ -96,6 +99,10 @@ class SectorEightSettings:
         self.opengl_advanced_settings_heading = None
         self.default_texture_scaling_index = \
             self.texture_scaling_dropdown_options.index(self.dotted_config_access.performance.TextureScaling)
+        self.account_list = list()
+        self.account_btn = None
+        self.profile_picture = None
+        self.edit_profile_btn = None
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
             self.scroll_objects.append(element)
@@ -126,7 +133,7 @@ class SectorEightSettings:
         if button == mouse.LEFT:
             if self.fps_dropdown:
                 self.fps_dropdown.on_mouse_press(x, y, button, modifiers)
-            if self.texture_scaling_dropdown:
+            if self.texture_scaling_dropdown and self.current_panel == "performance":
                 self.texture_scaling_dropdown.on_mouse_press(x, y, button, modifiers)
             if self.about_button.is_clicked(x, y):
                 if not self.current_panel == "about":
@@ -139,8 +146,15 @@ class SectorEightSettings:
                 if not self.current_panel == "performance":
                     self.destroy_panel()
                 self.show_performance_panel()
+            if self.account_btn.is_clicked(x, y):
+                if self.current_panel != "my_account":
+                    self.destroy_panel()
+                self.show_my_account_panel()
             if self.vsync_toggle_btn:
                 self.vsync_toggle_btn.on_mouse_press(x, y, button, modifiers)
+            if self.edit_profile_btn.is_clicked(x, y) and self.current_panel == "my_account":
+                filename = self.show_file_dialog()
+                self.edit_profile_picture(filename)
     
     def toggle_license_card_visibility(self):
         if self.num_times_license_btn_clicked % 2 == 0:
@@ -271,6 +285,7 @@ class SectorEightSettings:
         )
         self.current_panel = "performance"
         self.performance_list.append(self.fps_heading)
+        self.performance_list.append(self.fps_label)
         self.performance_list.append(self.fps_dropdown)
         self.performance_list.append(self.vsync_toggle_btn)
         self.performance_list.append(self.texture_scaling_dropdown)
@@ -287,8 +302,87 @@ class SectorEightSettings:
         self.dotted_config_access.performance.TextureScaling = texture_scaling_str
         self.configObj.toml_dict = self.dotted_config_access.to_dict()
         self.configObj.sync()
+    
+    def show_my_account_panel(self):
+        if self.current_panel == "my_account":
+            return
+        
+        profile_picture_x = ((self.window.width - self.vruler.x) // 2) - 50
+        try:
+            self.profile_picture = pyglet.sprite.Sprite(
+                pyglet.resource.image(f"images/{self.obfuscator_obj.obfuscate_filename(self.active_user)}.tif"),
+                                                        x=profile_picture_x, y=self.ruler.y - 390,
+                                                        batch=self.interface)
+        except pyglet.resource.ResourceNotFoundException:
+            self.profile_picture = pyglet.sprite.Sprite(
+                pyglet.resource.image(f"images/user.png"), x=profile_picture_x, y=self.ruler.y - 390,
+                                                        batch=self.interface)
+        self.profile_picture.scale = 3
+        self.edit_profile_btn = utilities.Button(
+            "\U0001F58C Edit Profile Picture", self.profile_picture.x,
+            self.profile_picture.y - 60, 350, 40, self.interface, (0, 240, 255, 255)
+        )
+        self.add_scrolllist(
+            [
+                self.profile_picture,
+                self.edit_profile_btn
+            ]
+        )
+        self.account_list.append(self.profile_picture)
+        self.account_list.append(self.edit_profile_btn)
+        self.current_panel = "my_account"
+    
+    def show_file_dialog(self):
+        root = tk.Tk()
+        root.withdraw()  # Hide the main Tk window
+        root.attributes('-topmost', True)  # Bring file picker in front of Pyglet
+        try:
+            file = filedialog.askopenfilename(parent=root, title="Select Profile Picture",
+            filetypes=[
+                ("Image Files", "*.png;*.jpg;*.jpeg;*.bmp;*.webp"),
+                ("PNG Files (*.png)", "*.png"),
+                ("JPEG Files (*.jpg)", "*.jpg;*.jpeg"),
+                ("GIF Files (*.gif)", "*.gif"),
+                ("TIFF Files (*.tiff)", "*.tiff")
+            ]
+            )
+        finally:
+            root.destroy()
+        return file
+    def edit_profile_picture(self, input_image_path):
+        if not input_image_path:
+            return
+
+        output_path = f"images/{self.obfuscator_obj.obfuscate_filename(self.active_user)}.tif"
+        
+        # 1. Process and save the file with Pillow
+        pillow_image: Image.Image = Image.open(input_image_path)
+        resized_image: Image.Image = pillow_image.resize((100, 100))
+        resized_image.save(output_path)
+        
+        # 2. Delete the old Pyglet sprite to free memory
+        if self.profile_picture:
+            self.profile_picture.delete()
+        
+        # 3. Load directly from disk path (bypasses pyglet.resource lookup)
+        profile_picture_x = ((self.window.width - self.vruler.x) // 2) - 50
+        loaded_image = pyglet.image.load(output_path)
+        
+        self.profile_picture = pyglet.sprite.Sprite(
+            loaded_image, 
+            x=profile_picture_x, 
+            y=self.ruler.y - 390,
+            batch=self.interface
+        )
+        self.profile_picture.scale = 3
+
+        # 4. Update the tracking list reference
+        if self.account_list:
+            self.account_list[0] = self.profile_picture
     def destroy_panel(self):
         self.big_welcome.visible = False
+        
+        # For About panel: 
         try:
             for i, item in enumerate(self.about_list.copy()):
                 if item:
@@ -302,6 +396,8 @@ class SectorEightSettings:
             self.num_times_license_btn_clicked = 0
         except AttributeError:
             ...
+        
+        # For the Performance panel:
         try:
             for i, item in enumerate(self.performance_list.copy()):
                 if item:
@@ -311,6 +407,19 @@ class SectorEightSettings:
                 except ValueError:
                     ...
             self.performance_list.clear()
+            self.current_panel = None    
+        except AttributeError:
+            ...
+        # For the My Account panel:
+        try:
+            for i, item in enumerate(self.account_list.copy()):
+                if item:
+                    item.delete()
+                try:
+                    self.scroll_objects.remove(item)
+                except ValueError:
+                    ...
+            self.account_list.clear()
             self.current_panel = None    
         except AttributeError:
             ...
@@ -365,6 +474,12 @@ class SectorEightSettings:
                                                 self.about_button.y + self.about_button.height + 30,
                                                 self.about_button.width, self.about_button.height,
                                                 self.interface, (0, 230, 118, 255))
+        self.account_btn = utilities.Button(
+            "\U0001F464 My Account", self.performance_btn.x, 
+            self.performance_btn.y + self.performance_btn.height + 30,
+            self.performance_btn.width, self.performance_btn.height, self.interface,
+            (124, 77, 255)
+        )
         
         self.add_scrolllist(
             [
