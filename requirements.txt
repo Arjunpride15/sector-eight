@@ -29,4 +29,8 @@ tastyerrors==2025.0.2
 tomli==2.4.0
 tomli_w==1.2.0
 tqdm==4.67.3
+typing_extensions==4.16.0
 wheel==0.45.1
+winrt-runtime==3.2.1
+winrt-Windows.Foundation==3.2.1
+winrt-Windows.Security.Credentials.UI==3.2.1

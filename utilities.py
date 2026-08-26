@@ -3,6 +3,8 @@ import conf
 import math
 import random
 from pyglet.window import key
+from tkinter import Tk
+from contextlib import contextmanager
 confObj = conf.Config()
 font_list = confObj.toml_dict['font']['fontList']
 def coord_distance(x1, y1, x2, y2):
@@ -16,6 +18,16 @@ def convertRGBAtoGL(r, g, b, a):
 
 def convertGLtoRGBA(r, g, b, a):
     return (round(r*255), round(g*255), round(b*255), round(a*255))
+
+@contextmanager
+def hiddenTkWindow():
+    try:
+        tkwindow = Tk()
+        tkwindow.withdraw()
+        yield tkwindow
+    finally:
+        if tkwindow:
+            tkwindow.destroy()
 class RoundedRectangle:
     def __init__(self, x, y, width, height, radius, color, batch):
         """

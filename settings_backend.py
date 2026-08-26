@@ -20,6 +20,7 @@ import box, os_version_query
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image
+import security_prompt
 
 class SectorEightSettings:
     def __init__(self, window):
@@ -103,6 +104,7 @@ class SectorEightSettings:
         self.account_btn = None
         self.profile_picture = None
         self.edit_profile_btn = None
+        self.edit_password_btn = None
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
             self.scroll_objects.append(element)
@@ -155,6 +157,10 @@ class SectorEightSettings:
             if self.edit_profile_btn.is_clicked(x, y) and self.current_panel == "my_account":
                 filename = self.show_file_dialog()
                 self.edit_profile_picture(filename)
+            if self.edit_password_btn:
+                if self.edit_password_btn.is_clicked(x, y) and self.current_panel == "my_account":
+                    security_prompt.prompt_pin_pyglet(f"Confirm Windows credentials to edit {self.active_user}'s Sector Eight Password",
+                                                      self.edit_password)
     
     def toggle_license_card_visibility(self):
         if self.num_times_license_btn_clicked % 2 == 0:
@@ -322,14 +328,20 @@ class SectorEightSettings:
             "\U0001F58C Edit Profile Picture", self.profile_picture.x,
             self.profile_picture.y - 60, 350, 40, self.interface, (0, 240, 255, 255)
         )
+        self.edit_password_btn = utilities.Button(
+            "\u270F Edit Password", self.edit_profile_btn.x,
+            self.edit_profile_btn.y - 100, 350, 40, self.interface, (70, 130, 180)
+        )
         self.add_scrolllist(
             [
                 self.profile_picture,
-                self.edit_profile_btn
+                self.edit_profile_btn,
+                self.edit_password_btn
             ]
         )
         self.account_list.append(self.profile_picture)
         self.account_list.append(self.edit_profile_btn)
+        self.account_list.append(self.edit_password_btn)
         self.current_panel = "my_account"
     
     def show_file_dialog(self):
@@ -379,6 +391,9 @@ class SectorEightSettings:
         # 4. Update the tracking list reference
         if self.account_list:
             self.account_list[0] = self.profile_picture
+    
+    def edit_password(self, correct_auth):
+        print(correct_auth)
     def destroy_panel(self):
         self.big_welcome.visible = False
         
