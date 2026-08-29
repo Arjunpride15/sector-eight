@@ -18,7 +18,7 @@ import logging
 import sys
 import box, os_version_query
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, simpledialog, messagebox
 from PIL import Image
 import security_prompt
 
@@ -105,6 +105,17 @@ class SectorEightSettings:
         self.profile_picture = None
         self.edit_profile_btn = None
         self.edit_password_btn = None
+        self.argon_hasher = PasswordHasher(
+            time_cost=4,
+            memory_cost=65536,
+            parallelism=5,
+            hash_len=32,
+            salt_len=32
+        )
+        self.danger_zone_rect = None
+        self.danger_zone_label = None
+        self.clear_account_btn = None
+        self.clear_account_label = None
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
             self.scroll_objects.append(element)
@@ -154,11 +165,13 @@ class SectorEightSettings:
                 self.show_my_account_panel()
             if self.vsync_toggle_btn:
                 self.vsync_toggle_btn.on_mouse_press(x, y, button, modifiers)
-            if self.edit_profile_btn.is_clicked(x, y) and self.current_panel == "my_account":
-                filename = self.show_file_dialog()
-                self.edit_profile_picture(filename)
+            if self.edit_profile_btn:
+                if self.edit_profile_btn.is_clicked(x, y) and self.current_panel == "my_account":
+                    filename = self.show_file_dialog()
+                    self.edit_profile_picture(filename)
             if self.edit_password_btn:
                 if self.edit_password_btn.is_clicked(x, y) and self.current_panel == "my_account":
+                    winsound.MessageBeep(winsound.MB_ICONASTERISK)
                     security_prompt.prompt_pin_pyglet(f"Confirm Windows credentials to edit {self.active_user}'s Sector Eight Password",
                                                       self.edit_password)
     
@@ -332,35 +345,62 @@ class SectorEightSettings:
             "\u270F Edit Password", self.edit_profile_btn.x,
             self.edit_profile_btn.y - 100, 350, 40, self.interface, (70, 130, 180)
         )
+        height_of_danger_zone = 700
+        DANGER_ZONE_RED = (220, 38, 38, 255)
+        self.danger_zone_rect = pyglet.shapes.Box(
+            x=self.vruler.x + 40, y=self.edit_password_btn.y - 50 - height_of_danger_zone, 
+            width=self.window.width - self.vruler.x - 40 - 20,
+            height=height_of_danger_zone,
+            thickness=2.0, color=DANGER_ZONE_RED, batch=self.interface
+        )
+        self.danger_zone_label = pyglet.text.Label(
+            "Danger Zone", x=self.danger_zone_rect.x + 20, 
+            y=self.danger_zone_rect.y + height_of_danger_zone - 50,
+            font_name="Open Sans", font_size=30, batch=self.interface,
+            color=DANGER_ZONE_RED
+        )
+        self.clear_account_label = pyglet.text.Label(
+            "This will PERMANENTLY delete all data related to your account. Proceed with caution: ",
+            x=self.danger_zone_label.x, y=self.danger_zone_label.y - 40 - 20,
+            font_name="Open Sans", font_size=18, batch=self.interface
+        )
+        self.clear_account_btn = utilities.Button(
+            text="Clear Account",
+            x=self.clear_account_label.x + 1000, y=self.clear_account_label.y - 9,
+            width=200, height=40, batch=self.interface,
+            colour=DANGER_ZONE_RED, font_name="Open Sans"
+        )
         self.add_scrolllist(
             [
                 self.profile_picture,
                 self.edit_profile_btn,
-                self.edit_password_btn
+                self.edit_password_btn,
+                self.danger_zone_rect,
+                self.danger_zone_label,
+                self.clear_account_btn,
+                self.clear_account_label
             ]
         )
         self.account_list.append(self.profile_picture)
         self.account_list.append(self.edit_profile_btn)
         self.account_list.append(self.edit_password_btn)
+        self.account_list.append(self.danger_zone_rect)
+        self.account_list.append(self.danger_zone_label)
+        self.account_list.append(self.clear_account_btn)
+        self.account_list.append(self.clear_account_label)
         self.current_panel = "my_account"
     
     def show_file_dialog(self):
-        root = tk.Tk()
-        root.withdraw()  # Hide the main Tk window
-        root.attributes('-topmost', True)  # Bring file picker in front of Pyglet
-        try:
+        with utilities.hiddenTkWindow() as root:
+            root.attributes('-topmost', True)  # Bring file picker in front of Pyglet
             file = filedialog.askopenfilename(parent=root, title="Select Profile Picture",
             filetypes=[
                 ("Image Files", "*.png;*.jpg;*.jpeg;*.bmp;*.webp"),
                 ("PNG Files (*.png)", "*.png"),
                 ("JPEG Files (*.jpg)", "*.jpg;*.jpeg"),
                 ("GIF Files (*.gif)", "*.gif"),
-                ("TIFF Files (*.tiff)", "*.tiff")
-            ]
-            )
-        finally:
-            root.destroy()
-        return file
+                ("TIFF Files (*.tiff)", "*.tiff")])
+            return file
     def edit_profile_picture(self, input_image_path):
         if not input_image_path:
             return
@@ -393,7 +433,36 @@ class SectorEightSettings:
             self.account_list[0] = self.profile_picture
     
     def edit_password(self, correct_auth):
-        print(correct_auth)
+        if not correct_auth:
+            return
+        with utilities.hiddenTkWindow() as root:
+            root.attributes('-topmost', True)
+            new_password = simpledialog.askstring("Sector Eight Password Prompt", "Enter the new password", 
+                                                  show="•", parent=root)
+            confirm_new_password = simpledialog.askstring("Sector Eight Password Prompt", "Confirm the new password", 
+                                                          show="•", parent=root)
+            if new_password != confirm_new_password:
+                messagebox.showerror("Authentication Error",
+                                     "Typed password doesn't match confirmatory password.", parent=root)
+                return
+            # --- Update & Save Password in DB ---
+            clean_username = self.active_user.strip().lower()
+
+            # Hash the new password using Argon2
+            hashed_password = self.argon_hasher.hash(new_password)
+
+            # Update the dictionary and write back to shelve
+            self.secure_password_dict[clean_username] = hashed_password
+            self.auth_db["password_dict"] = self.secure_password_dict
+            self.auth_db.sync()
+
+            # Feedback dialog
+            messagebox.showinfo(
+                "Success", 
+                f"Password for user '{self.active_user}' has been updated successfully!", 
+                parent=root
+            )
+
     def destroy_panel(self):
         self.big_welcome.visible = False
         

@@ -23,6 +23,7 @@ PySimpleGUI==5.0.8.3
 pytest==9.0.2
 python-box==7.4.1
 regex==2026.5.9
+Send2Trash==2.1.0
 setuptools==80.9.0
 simpleaudio==1.0.4
 tastyerrors==2025.0.2

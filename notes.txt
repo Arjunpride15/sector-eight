@@ -14,3 +14,17 @@
     Box({'hi': False, 'bye': False})
     >>> dict(d_dotted)
     {'hi': False, 'bye': False}
+
+29-08-2026
+
+1. Some code...
+with utilities.hiddenTkWindow() as root:
+            root.attributes('-topmost', True)  # Bring file picker in front of Pyglet
+            file = filedialog.askopenfilename(parent=root, title="Select Profile Picture",
+            filetypes=[
+                ("Image Files", "*.png;*.jpg;*.jpeg;*.bmp;*.webp"),
+                ("PNG Files (*.png)", "*.png"),
+                ("JPEG Files (*.jpg)", "*.jpg;*.jpeg"),
+                ("GIF Files (*.gif)", "*.gif"),
+                ("TIFF Files (*.tiff)", "*.tiff")])
+            return file
