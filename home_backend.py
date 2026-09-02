@@ -36,10 +36,11 @@ class SectorEightHome:
         if self.active_user:
             self.data_storage = \
             shelve.open(f'data\\temp\\game_data\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}')
+            self.log_file = \
+            shelve.open(f"data\\temp\\log\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}")
         else:
             Popen(["auth_launch.cmd"])
             sys.exit()
-        self.log_file = shelve.open(r"data\purchases")
         
         self.pellets = self.data_storage.get('pellets', 0)
         self.music_switch = False
@@ -438,6 +439,8 @@ class SectorEightHome:
             value = list(self.TINT_COLORS.values())[i]
             if value == self.avatar_rgb:
                 break
+        else:
+            i = 0
             
         self.avatar_dropdown = utilities.DropDownMenu(self.window, self.avatar_tint_label.x + 300, 
                                                       self.avatar_tint_label.y,

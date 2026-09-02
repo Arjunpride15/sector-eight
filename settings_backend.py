@@ -15,7 +15,7 @@ import pyglet.shapes
 from argon2 import PasswordHasher
 from session_manager import SessionManager
 import logging
-import sys
+import sys, os
 import box, os_version_query
 import tkinter as tk
 from tkinter import filedialog, simpledialog, messagebox
@@ -28,13 +28,17 @@ class SectorEightSettings:
         self.interface = pyglet.graphics.Batch()
         self.header_interface = pyglet.graphics.Batch()
         self.mask_interface = pyglet.graphics.Batch()
-        logging.basicConfig(format=" Log: %(asctime)s - %(levelname)s - %(message)s")
+        logging.basicConfig(level=logging.INFO, format=" Log: %(asctime)s - %(levelname)s - %(message)s")
         self.session_manager_obj = SessionManager()
         self.active_user = self.session_manager_obj.get_active_user()
         self.obfuscator_obj = obfuscator.PseudoEncryptor()
         if self.active_user:
             self.data_storage = \
-            shelve.open(f'data\\temp\\game_data\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}')
+                shelve.open(f'data\\temp\\game_data\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}')
+            self.log_store = \
+                shelve.open(f'data\\temp\\log\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}')
+            self.miscn_storage = \
+                shelve.open(f'data\\temp\\miscn\\{self.obfuscator_obj.obfuscate_filename(self.active_user)}')
             self.background = self.data_storage.get('background', (0.2, 0.2, 0.35, 1))
         else:
             Popen(["auth_launch.cmd"])
@@ -116,6 +120,8 @@ class SectorEightSettings:
         self.danger_zone_label = None
         self.clear_account_btn = None
         self.clear_account_label = None
+        self.clear_log_label = None
+        self.clear_log_btn = None
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
             self.scroll_objects.append(element)
@@ -174,7 +180,12 @@ class SectorEightSettings:
                     winsound.MessageBeep(winsound.MB_ICONASTERISK)
                     security_prompt.prompt_pin_pyglet(f"Confirm Windows credentials to edit {self.active_user}'s Sector Eight Password",
                                                       self.edit_password)
-    
+            if self.clear_account_btn:
+                if self.clear_account_btn.is_clicked(x, y) and self.current_panel == "my_account":
+                    self.clear_account()
+            if self.clear_log_btn:
+                if self.clear_log_btn.is_clicked(x, y) and self.current_panel == "my_account":
+                    self.clear_log()
     def toggle_license_card_visibility(self):
         if self.num_times_license_btn_clicked % 2 == 0:
              license_card_height = 4320
@@ -370,6 +381,17 @@ class SectorEightSettings:
             width=200, height=40, batch=self.interface,
             colour=DANGER_ZONE_RED, font_name="Open Sans"
         )
+        self.clear_log_label = pyglet.text.Label(
+            text="Clears your purchases history (stored locally). All recommendations will be gone.",
+            x=self.clear_account_label.x, y=self.clear_account_label.y - 40 - 20,
+            font_name="Open Sans", font_size=18, batch=self.interface
+        )
+        self.clear_log_btn = utilities.Button(
+            text="Clear Log", x=self.clear_log_label.x + 1000,
+            y=self.clear_log_label.y - 9, colour=(255, 193, 7, 255),
+            width=200, height=40, batch=self.interface,font_name="Open Sans",
+            text_color=(20, 20, 25, 255)
+        )
         self.add_scrolllist(
             [
                 self.profile_picture,
@@ -378,7 +400,9 @@ class SectorEightSettings:
                 self.danger_zone_rect,
                 self.danger_zone_label,
                 self.clear_account_btn,
-                self.clear_account_label
+                self.clear_account_label,
+                self.clear_log_label,
+                self.clear_log_btn
             ]
         )
         self.account_list.append(self.profile_picture)
@@ -388,6 +412,8 @@ class SectorEightSettings:
         self.account_list.append(self.danger_zone_label)
         self.account_list.append(self.clear_account_btn)
         self.account_list.append(self.clear_account_label)
+        self.account_list.append(self.clear_log_label)
+        self.account_list.append(self.clear_log_btn)
         self.current_panel = "my_account"
     
     def show_file_dialog(self):
@@ -462,7 +488,60 @@ class SectorEightSettings:
                 f"Password for user '{self.active_user}' has been updated successfully!", 
                 parent=root
             )
-
+    
+    def show_danger_confirmation_box(self, ask_twice=False):
+        with utilities.hiddenTkWindow() as root:
+            text = f"sectoreight/users/{self.active_user}"
+            winsound.MessageBeep(winsound.MB_ICONASTERISK)
+            prompt_confirmation = simpledialog.askstring(
+                parent=root, title="Dangerous Action Confirmation",
+                prompt=f"To confirm this dangerous action, type: \n {text:^20}"
+            )
+            if prompt_confirmation != text:
+                messagebox.showerror(
+                    "Canceled Operation", "The dangerous operation was canceled by the user."
+                )
+                return False
+            else:
+                if ask_twice:
+                    confirmation = messagebox.showwarning(
+                        "Dangerous Action Confirmation", 
+                        "This is a DANGEROUS action and CANNOT BE UNDONE. Please confirm:"
+                    )
+                    if confirmation != "ok":
+                        messagebox.showerror(
+                            "Canceled Operation", "The dangerous operation was canceled by the user."
+                        )
+                        return False
+                    else:
+                        return True
+                else:
+                    return True
+    
+    def clear_account(self):
+        response = self.show_danger_confirmation_box(ask_twice=True)
+        if not response:
+            return
+        else:
+            self.data_storage.clear()
+            self.miscn_storage.clear()
+            self.log_store.clear()
+            self.pellets = 0
+            self.pellet_label.text = f'\N{COIN}: {self.pellets}'
+            os.unlink(f"images/{self.obfuscator_obj.obfuscate_filename(self.active_user)}.tif")
+            logging.info(f"Deleting: images/{self.obfuscator_obj.obfuscate_filename(self.active_user)}.tif")
+            self.background = (0.2, 0.2, 0.35, 1)
+            loaded_image = r"images\user.png"
+        
+            self.profile_picture.image = pyglet.image.load(loaded_image)
+    
+    def clear_log(self):
+        response = self.show_danger_confirmation_box()
+        if not response:
+            return
+        else:
+            self.log_store.clear()
+            
     def destroy_panel(self):
         self.big_welcome.visible = False
         
@@ -576,4 +655,4 @@ class SectorEightSettings:
         self.play()
         pyglet.clock.schedule_interval(self.update, 1/60)
         pyglet.app.run()
-        logging.disable(logging.WARNING)
+        logging.disable(logging.CRITICAL)

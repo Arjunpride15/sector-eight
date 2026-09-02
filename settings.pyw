@@ -52,7 +52,12 @@ def on_close():
     # Safely close the shelf to save data
     if hasattr(settings_obj, 'data_storage'):
         settings_obj.data_storage.close()
-    
+    if hasattr(settings_obj, 'auth_db'):
+        settings_obj.auth_db.close()
+    if hasattr(settings_obj, 'log_store'):
+        settings_obj.log_store.close()
+    if hasattr(settings_obj, 'miscn_storage'):
+        settings_obj.miscn_storage.close()
     # Close the window
     window.close()
 
