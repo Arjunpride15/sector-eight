@@ -585,7 +585,7 @@ class SectorEightSettings:
         for path in paths:
             try:
                 os.unlink(path)
-            except FileNotFoundError, PermissionError as e:
+            except (FileNotFoundError, PermissionError) as e:
                 logging.error(f"Failed deleting: Following exception happened: \n \t {str(e)}")
         Popen(["auth_launch.cmd"])  
     def destroy_panel(self):
