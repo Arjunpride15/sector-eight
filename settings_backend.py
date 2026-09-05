@@ -122,6 +122,8 @@ class SectorEightSettings:
         self.clear_account_label = None
         self.clear_log_label = None
         self.clear_log_btn = None
+        self.delete_account_label = None
+        self.delete_account_btn = None
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
             self.scroll_objects.append(element)
@@ -186,6 +188,9 @@ class SectorEightSettings:
             if self.clear_log_btn:
                 if self.clear_log_btn.is_clicked(x, y) and self.current_panel == "my_account":
                     self.clear_log()
+            if self.delete_account_btn:
+                if self.delete_account_btn.is_clicked(x, y) and self.current_panel == "my_account":
+                    self.delete_account()
     def toggle_license_card_visibility(self):
         if self.num_times_license_btn_clicked % 2 == 0:
              license_card_height = 4320
@@ -371,7 +376,7 @@ class SectorEightSettings:
             color=DANGER_ZONE_RED
         )
         self.clear_account_label = pyglet.text.Label(
-            "This will PERMANENTLY delete all data related to your account. Proceed with caution: ",
+            "PERMANENTLY deletes all data related to your account. Proceed with caution: ",
             x=self.danger_zone_label.x, y=self.danger_zone_label.y - 40 - 20,
             font_name="Open Sans", font_size=18, batch=self.interface
         )
@@ -383,7 +388,7 @@ class SectorEightSettings:
         )
         self.clear_log_label = pyglet.text.Label(
             text="Clears your purchases history (stored locally). All recommendations will be gone.",
-            x=self.clear_account_label.x, y=self.clear_account_label.y - 40 - 20,
+            x=self.clear_account_label.x, y=self.clear_account_label.y - 100 - 20,
             font_name="Open Sans", font_size=18, batch=self.interface
         )
         self.clear_log_btn = utilities.Button(
@@ -392,6 +397,20 @@ class SectorEightSettings:
             width=200, height=40, batch=self.interface,font_name="Open Sans",
             text_color=(20, 20, 25, 255)
         )
+        self.delete_account_label = pyglet.text.Label(
+            "Deletes your entire account PERMANENTLY. No data will be recoverable.",
+            x=self.clear_log_label.x, y=self.clear_log_label.y - 100 - 20,
+            font_name="Open Sans", font_size=18, batch=self.interface
+        )
+        self.delete_account_btn = utilities.Button(
+            text="\N{WASTEBASKET} Delete Account",
+            x=self.delete_account_label.x + 1000, y=self.delete_account_label.y - 9,
+            width=230, height=40, batch=self.interface,
+            colour=DANGER_ZONE_RED, font_name="Open Sans"
+        )
+        height_of_danger_zone = (self.danger_zone_label.y - self.delete_account_btn.y) + 100
+        self.danger_zone_rect.y = self.delete_account_btn.y - 50
+        self.danger_zone_rect.height = height_of_danger_zone
         self.add_scrolllist(
             [
                 self.profile_picture,
@@ -402,7 +421,9 @@ class SectorEightSettings:
                 self.clear_account_btn,
                 self.clear_account_label,
                 self.clear_log_label,
-                self.clear_log_btn
+                self.clear_log_btn,
+                self.delete_account_label,
+                self.delete_account_btn
             ]
         )
         self.account_list.append(self.profile_picture)
@@ -414,6 +435,8 @@ class SectorEightSettings:
         self.account_list.append(self.clear_account_label)
         self.account_list.append(self.clear_log_label)
         self.account_list.append(self.clear_log_btn)
+        self.account_list.append(self.delete_account_label)
+        self.account_list.append(self.delete_account_btn)
         self.current_panel = "my_account"
     
     def show_file_dialog(self):
@@ -528,12 +551,16 @@ class SectorEightSettings:
             self.log_store.clear()
             self.pellets = 0
             self.pellet_label.text = f'\N{COIN}: {self.pellets}'
-            os.unlink(f"images/{self.obfuscator_obj.obfuscate_filename(self.active_user)}.tif")
-            logging.info(f"Deleting: images/{self.obfuscator_obj.obfuscate_filename(self.active_user)}.tif")
+            try:
+                os.unlink(f"images/{self.obfuscator_obj.obfuscate_filename(self.active_user)}.tif")
+                logging.info(f"Deleting: images/{self.obfuscator_obj.obfuscate_filename(self.active_user)}.tif")
+            except FileNotFoundError:
+                ...
             self.background = (0.2, 0.2, 0.35, 1)
             loaded_image = r"images\user.png"
         
             self.profile_picture.image = pyglet.image.load(loaded_image)
+            
     
     def clear_log(self):
         response = self.show_danger_confirmation_box()
@@ -541,7 +568,26 @@ class SectorEightSettings:
             return
         else:
             self.log_store.clear()
-            
+    
+    def delete_account(self):
+        self.clear_account()
+        clean_username = self.active_user.strip().lower()   
+        del self.secure_password_dict[clean_username]
+        
+        self.auth_db["password_dict"] = self.secure_password_dict
+        self.auth_db.sync()
+        self.session_manager_obj.clear_session()
+        paths = [
+            f"data/temp/game_data/{self.obfuscator_obj.obfuscate_filename(self.active_user)}",
+            f"data/temp/log/{self.obfuscator_obj.obfuscate_filename(self.active_user)}",
+            f"data/temp/miscn/{self.obfuscator_obj.obfuscate_filename(self.active_user)}"
+        ]
+        for path in paths:
+            try:
+                os.unlink(path)
+            except FileNotFoundError as e:
+                logging.error(f"Failed deleting: Following exception happened: \n \t {str(e)}")
+        Popen(["auth_launch.cmd"])  
     def destroy_panel(self):
         self.big_welcome.visible = False
         
