@@ -46,6 +46,8 @@ def on_mouse_motion(x, y, dx, dy):
         settings_obj.fps_dropdown.on_mouse_motion(x, y, dx, dy)
     if settings_obj.texture_scaling_dropdown:
         settings_obj.texture_scaling_dropdown.on_mouse_motion(x, y, dx, dy)
+    if settings_obj.theme_dropdown:
+        settings_obj.theme_dropdown.on_mouse_motion(x, y, dx, dy)
 @window.event
 def on_close():
     settings_obj.stop_music()

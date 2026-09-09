@@ -124,6 +124,19 @@ class SectorEightSettings:
         self.clear_log_btn = None
         self.delete_account_label = None
         self.delete_account_btn = None
+        self.appearance_list = list()
+        self.appearance_btn = None
+        self.appearance_label = None
+        self.theme_backgrounds = {
+            'Dark+': (30/255, 30/255, 30/255, 1.0),
+            'Epic Dark Blue': (15/255, 18/255, 32/255, 1.0),
+            'Modern Blue': (0.2, 0.2, 0.35, 1),
+            'Simply Light': (0.898, 0.914, 0.941, 1.0),
+            'Light Sunset': (253/255, 230/255, 224/255, 1.0),
+            'Neon Mania': (random.random(), random.random(), random.random(), 1.0)
+        }
+        self.theme_dropdown = None
+        self.theme_dropdown_label = None
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
             self.scroll_objects.append(element)
@@ -154,6 +167,8 @@ class SectorEightSettings:
         if button == mouse.LEFT:
             if self.fps_dropdown:
                 self.fps_dropdown.on_mouse_press(x, y, button, modifiers)
+            if self.theme_dropdown:
+                self.theme_dropdown.on_mouse_press(x, y, button, modifiers)
             if self.texture_scaling_dropdown and self.current_panel == "performance":
                 self.texture_scaling_dropdown.on_mouse_press(x, y, button, modifiers)
             if self.about_button.is_clicked(x, y):
@@ -171,6 +186,10 @@ class SectorEightSettings:
                 if self.current_panel != "my_account":
                     self.destroy_panel()
                 self.show_my_account_panel()
+            if self.appearance_btn.is_clicked(x, y):
+                if self.current_panel != "appearance":
+                    self.destroy_panel()
+                self.show_appearance_panel()
             if self.vsync_toggle_btn:
                 self.vsync_toggle_btn.on_mouse_press(x, y, button, modifiers)
             if self.edit_profile_btn:
@@ -203,6 +222,7 @@ class SectorEightSettings:
              self.add_scrolllist(self.license_card)
              self.about_list.append(self.license_card)
              self.num_times_license_btn_clicked += 1
+             self.max_scroll = abs(self.license_card.y - 700)
         else:
             self.scroll_objects.remove(self.license_card)
             self.about_list.remove(self.license_card)
@@ -210,6 +230,7 @@ class SectorEightSettings:
             self.license_card = None
             self.license_btn.label.text = "Show License ⏑"
             self.num_times_license_btn_clicked += 1
+            self.max_scroll = abs(self.license_btn.y - 30)
     
     def show_about_panel(self):
         if self.current_panel == "about":
@@ -255,7 +276,8 @@ class SectorEightSettings:
         self.about_list.append(self.about_card_main)
         self.about_list.append(self.license_btn)
         self.current_panel = "about"
-    
+        self.max_scroll = abs(self.license_btn.y - 30)
+        self.force_refresh_theme()
     def turn_vsync_on_or_off(self, state: bool):
         self.dotted_config_access.performance.VSync = state
         self.configObj.toml_dict = self.dotted_config_access.to_dict()
@@ -326,6 +348,8 @@ class SectorEightSettings:
         self.performance_list.append(self.texture_scaling_dropdown)
         self.performance_list.append(self.texture_scaling_label)
         self.performance_list.append(self.opengl_advanced_settings_heading)
+        self.max_scroll = 20
+        self.force_refresh_theme()
     def set_fps(self, fps: str):
         fps = int(fps.strip(" FPS"))
         self.dotted_config_access.performance.FPS = fps
@@ -438,7 +462,8 @@ class SectorEightSettings:
         self.account_list.append(self.delete_account_label)
         self.account_list.append(self.delete_account_btn)
         self.current_panel = "my_account"
-    
+        self.max_scroll = abs(self.danger_zone_rect.y - 30)
+        self.force_refresh_theme()
     def show_file_dialog(self):
         with utilities.hiddenTkWindow() as root:
             root.attributes('-topmost', True)  # Bring file picker in front of Pyglet
@@ -588,6 +613,84 @@ class SectorEightSettings:
             except (FileNotFoundError, PermissionError) as e:
                 logging.error(f"Failed deleting: Following exception happened: \n \t {str(e)}")
         Popen(["auth_launch.cmd"])  
+    
+    def show_appearance_panel(self):
+        if self.current_panel == "appearance":
+            return
+        #logging.info("showing appearance panel...")
+        self.appearance_label = pyglet.text.Label(
+            text="Appearance Settings", x=self.vruler.x + 30, y=self.ruler.y - 60,
+            font_size=30, font_name="Open Sans", batch=self.interface
+        )
+        # Calculate default selected theme index
+        for index, bg in enumerate(self.theme_backgrounds.values()):
+            if bg == self.background:
+                break
+        else:
+            index = list(self.theme_backgrounds.keys()).index('Neon Mania')
+
+        self.theme_dropdown_label = pyglet.text.Label(
+            "Change Theme Preset: ", x=self.appearance_label.x,
+            y=self.appearance_label.y - 100, font_name="Open Sans",
+            font_size=18, batch=self.interface, color=(255, 255, 255)
+        )
+
+        self.theme_dropdown = utilities.DropDownMenu(
+            self.window, x=self.theme_dropdown_label.x + 280,
+            y=self.theme_dropdown_label.y - 10, width=320, height=40,
+            options=list(self.theme_backgrounds.keys()),
+            batch=self.interface, on_select=self.change_theme,
+            accent_color=(150, 150, 150, 255), default_index=index
+        )
+        self.add_scrolllist(
+            [
+                self.appearance_label,
+                self.theme_dropdown,
+                self.theme_dropdown_label
+            ]
+        )
+        self.appearance_list.append(self.appearance_label)
+        self.appearance_list.append(self.theme_dropdown)
+        self.appearance_list.append(self.theme_dropdown_label)
+        self.current_panel = "appearance"
+        self.force_refresh_theme()
+    def change_theme(self, theme):
+        # 1. Update active background and persist to user storage
+        self.background = self.theme_backgrounds[theme]
+        self.data_storage['background'] = self.background
+        self.data_storage.sync()
+
+        is_light = 'Light' in theme
+        line_color = (25, 25, 25, 255) if is_light else (255, 255, 255, 255)
+        text_color = (25, 25, 25, 255) if is_light else (255, 255, 255, 255)
+
+        # 2. Update Header Lines
+        if self.vruler and self.vruler.color[:3] != line_color[:3]:
+            self.vruler.color = line_color
+            self.ruler.color = line_color
+
+        # 3. Update Header & Static Text Labels
+        if hasattr(self, 'welcome_label') and self.welcome_label:
+            self.welcome_label.color = text_color
+        if hasattr(self, 'big_welcome') and self.big_welcome:
+            self.big_welcome.color = text_color
+        if hasattr(self, 'appearance_label') and self.appearance_label:
+            self.appearance_label.color = text_color
+        if hasattr(self, 'theme_dropdown_label') and self.theme_dropdown_label:
+            self.theme_dropdown_label.color = text_color
+
+        # 4. Update Header Mask Rectangle
+        rgb_background = utilities.convertGLtoRGBA(*self.background)
+        if self.mask_rect:
+            self.mask_rect.color = rgb_background
+    
+    def force_refresh_theme(self):
+        for item, value in self.theme_backgrounds.items():
+            if value == self.background:
+                break
+        else:
+            item = "Neon Mania"
+        self.change_theme(item)
     def destroy_panel(self):
         self.big_welcome.visible = False
         
@@ -629,6 +732,19 @@ class SectorEightSettings:
                 except ValueError:
                     ...
             self.account_list.clear()
+            self.current_panel = None    
+        except AttributeError:
+            ...
+        # For the Appearance panel:
+        try:
+            for i, item in enumerate(self.appearance_list.copy()):
+                if item:
+                    item.delete()
+                try:
+                    self.scroll_objects.remove(item)
+                except ValueError:
+                    ...
+            self.appearance_list.clear()
             self.current_panel = None    
         except AttributeError:
             ...
@@ -689,14 +805,21 @@ class SectorEightSettings:
             self.performance_btn.width, self.performance_btn.height, self.interface,
             (124, 77, 255)
         )
+        self.appearance_btn = utilities.Button(
+            "🎨 Appearance", self.account_btn.x, 
+            self.account_btn.y + self.account_btn.height + 30,
+            self.account_btn.width, self.account_btn.height, self.interface,
+            (2, 132, 199, 255)
+        )
         
         self.add_scrolllist(
             [
                 self.big_welcome
             ]
         )
+        self.force_refresh_theme()
     def update(self, dt):
-        ...
+        self.theme_backgrounds['Neon Mania'] = (random.random(), random.random(), random.random(), 1.0)
     def start(self):
         self.play()
         pyglet.clock.schedule_interval(self.update, 1/60)
