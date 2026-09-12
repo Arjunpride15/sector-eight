@@ -41,7 +41,7 @@ def on_mouse_press(x, y, button, modifiers):
                 home_obj.toggle_side_panel()
             if home_obj.side_panel_visible:
                 if home_obj.settings_button.is_clicked(x, y):
-                    ...
+                    home_obj.settings()
                 if home_obj.shop_btn.is_clicked(x, y):
                     home_obj.shop()
                 if home_obj.game_btn.is_clicked(x, y):
@@ -49,7 +49,7 @@ def on_mouse_press(x, y, button, modifiers):
                 if home_obj.query_btn.is_clicked(x, y):
                     home_obj.query()
                 if home_obj.logout_btn.is_clicked(x, y):
-                    ...        
+                    home_obj.logout()      
         if home_obj.cyclic_badge != None:
             if home_obj.left_nav_btn:
                 if home_obj.left_nav_btn.is_clicked(x, y):
@@ -60,7 +60,7 @@ def on_mouse_press(x, y, button, modifiers):
             if home_obj.cyclic_state_list[0] and home_obj.badge_1.is_clicked(x, y):
                 home_obj.shop()
             elif home_obj.cyclic_state_list[1] and home_obj.badge_2.is_clicked(x, y):
-                home_obj.logout()       
+                home_obj.settings()
             elif home_obj.cyclic_state_list[2] and home_obj.badge_3.is_clicked(x, y):
                 home_obj.query()
             elif home_obj.cyclic_state_list[3] and home_obj.badge_4.is_clicked(x, y):

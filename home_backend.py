@@ -236,6 +236,9 @@ class SectorEightHome:
     def logout(self):
         self.session_obj.clear_session()
         Popen(["auth_launch.cmd"])
+    
+    def settings(self):
+        Popen(["settings_launch.cmd"])
     def reward_player(self):
         var = self.data_storage.get(self.reward_of_the_day_key, 0)
         var += self.num_reward
@@ -308,6 +311,8 @@ class SectorEightHome:
             if self.side_panel_btn.label.color[:3] != text_color[:3]:
                 self.side_panel_btn.label.color = text_color
         self.user_label.opacity = 0
+    
+
     def init_window(self):
         pyglet.clock.schedule_interval_for_duration(self.show_loading_screen, 1/60, 2.4)
         pyglet.clock.schedule_once(self.hide_loading_screen, 2.4)

@@ -137,6 +137,17 @@ class SectorEightSettings:
         }
         self.theme_dropdown = None
         self.theme_dropdown_label = None
+        if self.is_dark_background():
+            self.TEXT_COLOR = (255, 255, 255, 255)
+        else:
+            self.TEXT_COLOR = (25, 25, 25, 255)
+    
+    def is_dark_background(self):
+        r, g, b = self.background[:3]
+        # Calculate standard perceived relative luminance
+        luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        return luminance < 0.5
+    
     def add_scrolllist(self, element):
         if isinstance(element, self.type_checklist):
             self.scroll_objects.append(element)
@@ -165,6 +176,8 @@ class SectorEightSettings:
     
     def handle_mouse_click(self, x, y, button, modifiers):
         if button == mouse.LEFT:
+            if y > self.ruler.y:
+                return
             if self.fps_dropdown:
                 self.fps_dropdown.on_mouse_press(x, y, button, modifiers)
             if self.theme_dropdown:
@@ -231,6 +244,9 @@ class SectorEightSettings:
             self.license_btn.label.text = "Show License ⏑"
             self.num_times_license_btn_clicked += 1
             self.max_scroll = abs(self.license_btn.y - 30)
+            self.destroy_panel()
+            self.current_panel = ""
+            self.show_about_panel()
     
     def show_about_panel(self):
         if self.current_panel == "about":
@@ -277,7 +293,8 @@ class SectorEightSettings:
         self.about_list.append(self.license_btn)
         self.current_panel = "about"
         self.max_scroll = abs(self.license_btn.y - 30)
-        self.force_refresh_theme()
+        self.offset_y = 0
+        #self.force_refresh_theme()
     def turn_vsync_on_or_off(self, state: bool):
         self.dotted_config_access.performance.VSync = state
         self.configObj.toml_dict = self.dotted_config_access.to_dict()
@@ -289,14 +306,14 @@ class SectorEightSettings:
         self.fps_heading = pyglet.text.Label(
             text="FPS and VSync Settings", x=self.vruler.x + 30,
             y=self.ruler.y - 50, font_size=30, font_name="Open Sans",
-            batch=self.interface
+            batch=self.interface, color=self.TEXT_COLOR
         )
         fps_options = [f"{fps_num} FPS" for fps_num in self.fps_list]
         
         self.fps_label = pyglet.text.Label(
             "FPS: ", self.fps_heading.x, self.fps_heading.y - 100,
             font_name="Open Sans", font_size=20, batch=self.interface,
-            color=(255, 255, 255)
+            color=self.TEXT_COLOR
         )
         self.fps_dropdown = utilities.DropDownMenu(
             self.window, self.fps_label.x + 70, self.fps_label.y - 10, 280, 40,
@@ -308,19 +325,19 @@ class SectorEightSettings:
             text="VSync On/Off", is_on=self.dotted_config_access.performance.VSync, 
             batch=self.interface,
             on_toggle=self.turn_vsync_on_or_off,
-            on_color=(0, 240, 255, 255)
+            on_color=(0, 240, 255, 255), text_color=self.TEXT_COLOR
         )
         
         self.opengl_advanced_settings_heading = pyglet.text.Label(
             text="Advanced OpenGL Graphics Settings", x=self.vsync_toggle_btn.x, 
             y=self.vsync_toggle_btn.y - 90, 
             font_size=30, font_name="Open Sans",
-            batch=self.interface
+            batch=self.interface, color=self.TEXT_COLOR
         )
         self.texture_scaling_label = pyglet.text.Label(
             text="Texture Scaling: ", x=self.opengl_advanced_settings_heading.x, 
             y=self.opengl_advanced_settings_heading.y - 90,
-            font_name="Open Sans", font_size=20, batch=self.interface
+            font_name="Open Sans", font_size=20, batch=self.interface, color=self.TEXT_COLOR
             
         )
         self.texture_scaling_dropdown = utilities.DropDownMenu(
@@ -348,8 +365,9 @@ class SectorEightSettings:
         self.performance_list.append(self.texture_scaling_dropdown)
         self.performance_list.append(self.texture_scaling_label)
         self.performance_list.append(self.opengl_advanced_settings_heading)
-        self.max_scroll = 20
-        self.force_refresh_theme()
+        self.max_scroll = -20
+        self.offset_y = 0
+        #self.force_refresh_theme()
     def set_fps(self, fps: str):
         fps = int(fps.strip(" FPS"))
         self.dotted_config_access.performance.FPS = fps
@@ -402,7 +420,7 @@ class SectorEightSettings:
         self.clear_account_label = pyglet.text.Label(
             "PERMANENTLY deletes all data related to your account. Proceed with caution: ",
             x=self.danger_zone_label.x, y=self.danger_zone_label.y - 40 - 20,
-            font_name="Open Sans", font_size=18, batch=self.interface
+            font_name="Open Sans", font_size=18, batch=self.interface, color=self.TEXT_COLOR
         )
         self.clear_account_btn = utilities.Button(
             text="Clear Account",
@@ -413,7 +431,7 @@ class SectorEightSettings:
         self.clear_log_label = pyglet.text.Label(
             text="Clears your purchases history (stored locally). All recommendations will be gone.",
             x=self.clear_account_label.x, y=self.clear_account_label.y - 100 - 20,
-            font_name="Open Sans", font_size=18, batch=self.interface
+            font_name="Open Sans", font_size=18, batch=self.interface, color=self.TEXT_COLOR
         )
         self.clear_log_btn = utilities.Button(
             text="Clear Log", x=self.clear_log_label.x + 1000,
@@ -424,7 +442,7 @@ class SectorEightSettings:
         self.delete_account_label = pyglet.text.Label(
             "Deletes your entire account PERMANENTLY. No data will be recoverable.",
             x=self.clear_log_label.x, y=self.clear_log_label.y - 100 - 20,
-            font_name="Open Sans", font_size=18, batch=self.interface
+            font_name="Open Sans", font_size=18, batch=self.interface, color=self.TEXT_COLOR
         )
         self.delete_account_btn = utilities.Button(
             text="\N{WASTEBASKET} Delete Account",
@@ -463,7 +481,8 @@ class SectorEightSettings:
         self.account_list.append(self.delete_account_btn)
         self.current_panel = "my_account"
         self.max_scroll = abs(self.danger_zone_rect.y - 30)
-        self.force_refresh_theme()
+        self.offset_y = 0
+        #self.force_refresh_theme()
     def show_file_dialog(self):
         with utilities.hiddenTkWindow() as root:
             root.attributes('-topmost', True)  # Bring file picker in front of Pyglet
@@ -620,7 +639,8 @@ class SectorEightSettings:
         #logging.info("showing appearance panel...")
         self.appearance_label = pyglet.text.Label(
             text="Appearance Settings", x=self.vruler.x + 30, y=self.ruler.y - 60,
-            font_size=30, font_name="Open Sans", batch=self.interface
+            font_size=30, font_name="Open Sans", batch=self.interface,
+            color=self.TEXT_COLOR
         )
         # Calculate default selected theme index
         for index, bg in enumerate(self.theme_backgrounds.values()):
@@ -632,7 +652,7 @@ class SectorEightSettings:
         self.theme_dropdown_label = pyglet.text.Label(
             "Change Theme Preset: ", x=self.appearance_label.x,
             y=self.appearance_label.y - 100, font_name="Open Sans",
-            font_size=18, batch=self.interface, color=(255, 255, 255)
+            font_size=18, batch=self.interface, color=self.TEXT_COLOR
         )
 
         self.theme_dropdown = utilities.DropDownMenu(
@@ -653,16 +673,18 @@ class SectorEightSettings:
         self.appearance_list.append(self.theme_dropdown)
         self.appearance_list.append(self.theme_dropdown_label)
         self.current_panel = "appearance"
-        self.force_refresh_theme()
+        #self.force_refresh_theme()
     def change_theme(self, theme):
         # 1. Update active background and persist to user storage
         self.background = self.theme_backgrounds[theme]
         self.data_storage['background'] = self.background
         self.data_storage.sync()
+        self.mask_rect.color = utilities.convertGLtoRGBA(*self.background)
 
-        is_light = 'Light' in theme
+        is_light = not self.is_dark_background()
         line_color = (25, 25, 25, 255) if is_light else (255, 255, 255, 255)
         text_color = (25, 25, 25, 255) if is_light else (255, 255, 255, 255)
+        self.TEXT_COLOR = text_color
 
         # 2. Update Header Lines
         if self.vruler and self.vruler.color[:3] != line_color[:3]:
@@ -670,13 +692,13 @@ class SectorEightSettings:
             self.ruler.color = line_color
 
         # 3. Update Header & Static Text Labels
-        if hasattr(self, 'welcome_label') and self.welcome_label:
+        if self.welcome_label:
             self.welcome_label.color = text_color
-        if hasattr(self, 'big_welcome') and self.big_welcome:
+        if self.big_welcome:
             self.big_welcome.color = text_color
-        if hasattr(self, 'appearance_label') and self.appearance_label:
+        if self.appearance_label:
             self.appearance_label.color = text_color
-        if hasattr(self, 'theme_dropdown_label') and self.theme_dropdown_label:
+        if self.theme_dropdown_label:
             self.theme_dropdown_label.color = text_color
 
         # 4. Update Header Mask Rectangle
@@ -684,13 +706,6 @@ class SectorEightSettings:
         if self.mask_rect:
             self.mask_rect.color = rgb_background
     
-    def force_refresh_theme(self):
-        for item, value in self.theme_backgrounds.items():
-            if value == self.background:
-                break
-        else:
-            item = "Neon Mania"
-        self.change_theme(item)
     def destroy_panel(self):
         self.big_welcome.visible = False
         
@@ -755,7 +770,7 @@ class SectorEightSettings:
                                               x=250, 
                                               y=740, 
                                               batch=self.header_interface, 
-                                              color=(255, 255, 255, 255))
+                                              color=self.TEXT_COLOR)
         self.pellet_label = pyglet.text.Label(f'\N{COIN}: {self.pellets}', 
                                               font_name="Open Sans", 
                                               font_size=20,
@@ -766,10 +781,10 @@ class SectorEightSettings:
         vruler_x = self.welcome_label.x - 20
         self.vruler = pyglet.shapes.Line(x=vruler_x, y=0,
                                          x2=vruler_x, y2=self.window.height,
-                                         thickness=1.6, color=(255, 255, 255, 255), batch=self.header_interface)
+                                         thickness=1.6, color=self.TEXT_COLOR, batch=self.header_interface)
         ruler_y = self.welcome_label.y - 20
         self.ruler = pyglet.shapes.Line(x=0, y=ruler_y, x2=self.window.width, y2=ruler_y,
-                                        thickness=1.6, color=(255, 255, 255, 255), batch=self.header_interface)
+                                        thickness=1.6, color=self.TEXT_COLOR, batch=self.header_interface)
         self.mask_rect = pyglet.shapes.Rectangle(
             x=0, y=ruler_y, width=self.window.width, height=self.window.width - ruler_y,
             color=utilities.convertGLtoRGBA(*self.background), batch=self.mask_interface
@@ -790,7 +805,8 @@ class SectorEightSettings:
                                              multiline=True,
                                              font_size=40,
                                              width=1200,
-                                             batch=self.interface
+                                             batch=self.interface,
+                                             color=self.TEXT_COLOR
             
                                             )
         self.about_button = utilities.Button("\u2139 About", 10, 30, vruler_x - 10 - 10,
@@ -817,7 +833,7 @@ class SectorEightSettings:
                 self.big_welcome
             ]
         )
-        self.force_refresh_theme()
+        #self.force_refresh_theme()
     def update(self, dt):
         self.theme_backgrounds['Neon Mania'] = (random.random(), random.random(), random.random(), 1.0)
     def start(self):
