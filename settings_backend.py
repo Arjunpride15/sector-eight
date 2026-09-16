@@ -141,7 +141,44 @@ class SectorEightSettings:
             self.TEXT_COLOR = (255, 255, 255, 255)
         else:
             self.TEXT_COLOR = (25, 25, 25, 255)
-    
+        self.user_picture = None
+        self.user_label = None
+        # Avatar Tint Data
+        self.TINT_COLORS = {
+            "None": (200, 200, 200, 100),
+            "neon_green": (57, 255, 20, 100),      # Classic matrix/laser green
+            "electric_cyan": (0, 255, 255, 100),    # Vibrant arcade cyan
+            "cyber_pink": (255, 0, 127, 100),      # Synthwave hot pink
+            "laser_red": (255, 7, 58, 100),        # Intense electric neon red
+            "plasma_purple": (186, 85, 211, 100),  # Rich arcade purple
+            "solar_yellow": (255, 234, 0, 100),    # Ultra-bright toxic yellow
+            "sonic_blue": (0, 150, 255, 100),      # Sharp, fast arcade blue
+            "proton_orange": (255, 103, 0, 100),   # High-voltage neon orange
+            "mint_glitch": (0, 255, 163, 100),     # Super bright seafoam/mint
+            "radioactive": (204, 255, 0, 100),     # Bright lime/chartreuse
+            "blaze_magenta": (255, 0, 255, 100),   # Pure vibrant fuchsia 
+            "phoenix_gold": (253, 189, 1, 100),    # Deep rich golden token yellow
+            "hyper_aqua": (0, 245, 255, 100),      # Ice-cold neon turquoise
+            "crimson_rush": (220, 53, 69, 100),    # Deep punchy menu red
+            "prism_violet": (138, 43, 226, 100)    # Deep neon blue-violet
+        }
+        self.AVATAR_DROPDOWN_COLORS = []
+        for tint in self.TINT_COLORS.keys():
+            if tint != "None":
+                split_tint = tint.split("_")
+                try:
+                    tint_name = f"{split_tint[0]} {split_tint[1]}"
+                except IndexError:
+                    tint_name = tint
+            else:
+                tint_name = "None"
+            self.AVATAR_DROPDOWN_COLORS.append(tint_name.title())
+
+        self.avatar_dropdown = None
+        self.avatar_preview = None
+        self.avatar_rgb = self.data_storage.get("tint", (200, 200, 200))
+        self.avatar_tint_label = None
+        self.account_avatar_icon = None
     def is_dark_background(self):
         r, g, b = self.background[:3]
         # Calculate standard perceived relative luminance
@@ -184,6 +221,8 @@ class SectorEightSettings:
                 self.theme_dropdown.on_mouse_press(x, y, button, modifiers)
             if self.texture_scaling_dropdown and self.current_panel == "performance":
                 self.texture_scaling_dropdown.on_mouse_press(x, y, button, modifiers)
+            if self.avatar_dropdown and self.current_panel == "appearance":
+                self.avatar_dropdown.on_mouse_press(x, y, button, modifiers)
             if self.about_button.is_clicked(x, y):
                 if not self.current_panel == "about":
                     self.destroy_panel()
@@ -395,6 +434,13 @@ class SectorEightSettings:
                 pyglet.resource.image(f"images/user.png"), x=profile_picture_x, y=self.ruler.y - 390,
                                                         batch=self.interface)
         self.profile_picture.scale = 3
+        self.account_avatar_icon = pyglet.shapes.Rectangle(
+            x=self.profile_picture.x,
+            y=self.profile_picture.y,
+            width=300, height=300,
+            color=self.avatar_rgb,  # Uses the active RGB tint color
+            batch=self.interface
+        )
         self.edit_profile_btn = utilities.Button(
             "\U0001F58C Edit Profile Picture", self.profile_picture.x,
             self.profile_picture.y - 60, 350, 40, self.interface, (0, 240, 255, 255)
@@ -465,7 +511,8 @@ class SectorEightSettings:
                 self.clear_log_label,
                 self.clear_log_btn,
                 self.delete_account_label,
-                self.delete_account_btn
+                self.delete_account_btn,
+                self.account_avatar_icon
             ]
         )
         self.account_list.append(self.profile_picture)
@@ -479,6 +526,7 @@ class SectorEightSettings:
         self.account_list.append(self.clear_log_btn)
         self.account_list.append(self.delete_account_label)
         self.account_list.append(self.delete_account_btn)
+        self.account_list.append(self.account_avatar_icon)
         self.current_panel = "my_account"
         self.max_scroll = abs(self.danger_zone_rect.y - 30)
         self.offset_y = 0
@@ -662,16 +710,49 @@ class SectorEightSettings:
             batch=self.interface, on_select=self.change_theme,
             accent_color=(150, 150, 150, 255), default_index=index
         )
+        # Position relative to your last element in Appearance tab
+        self.avatar_tint_label = pyglet.text.Label(
+            "Avatar Tint: ", x=self.appearance_label.x,
+            y=self.theme_dropdown_label.y - 80, font_name="Open Sans",
+            font_size=18, batch=self.interface, color=self.TEXT_COLOR
+        )
+
+        # Match saved tint color to default dropdown index
+        default_index = 0
+        for i, val in enumerate(self.TINT_COLORS.values()):
+            if val == self.avatar_rgb:
+                default_index = i
+                break
+
+        self.avatar_dropdown = utilities.DropDownMenu(
+            self.window, x=self.avatar_tint_label.x + 200,
+            y=self.avatar_tint_label.y - 10, width=320, height=40,
+            options=self.AVATAR_DROPDOWN_COLORS,
+            batch=self.interface, on_select=self.change_user_avatar_tint,
+            accent_color=(150, 150, 150, 255), default_index=default_index
+        )
+
+        self.avatar_preview = pyglet.shapes.Rectangle(
+            x=self.avatar_dropdown.x + self.avatar_dropdown.width + 20,
+            y=self.avatar_dropdown.y,
+            width=40, height=40, color=self.avatar_rgb, batch=self.interface
+        )
         self.add_scrolllist(
             [
                 self.appearance_label,
                 self.theme_dropdown,
-                self.theme_dropdown_label
+                self.theme_dropdown_label,
+                self.avatar_dropdown,
+                self.avatar_preview,
+                self.avatar_tint_label
             ]
         )
         self.appearance_list.append(self.appearance_label)
         self.appearance_list.append(self.theme_dropdown)
         self.appearance_list.append(self.theme_dropdown_label)
+        self.appearance_list.append(self.avatar_dropdown)
+        self.appearance_list.append(self.avatar_preview)
+        self.appearance_list.append(self.avatar_tint_label)
         self.current_panel = "appearance"
         #self.force_refresh_theme()
     def change_theme(self, theme):
@@ -705,7 +786,25 @@ class SectorEightSettings:
         rgb_background = utilities.convertGLtoRGBA(*self.background)
         if self.mask_rect:
             self.mask_rect.color = rgb_background
-    
+    def change_user_avatar_tint(self, color: str):
+        if color == "None":
+            target_rgb = (200, 200, 200, 100)
+        else:
+            lowercase = color.lower()
+            split_color = lowercase.split(" ")
+            try:
+                color_key = f"{split_color[0]}_{split_color[1]}"
+            except IndexError:
+                color_key = lowercase
+            target_rgb = self.TINT_COLORS.get(color_key, (200, 200, 200, 100))
+
+        self.avatar_rgb = target_rgb
+        if self.avatar_preview:
+            self.avatar_preview.color = target_rgb
+
+        # Sync persistent data
+        self.data_storage['tint'] = self.avatar_rgb
+        self.data_storage.sync()
     def destroy_panel(self):
         self.big_welcome.visible = False
         
@@ -809,6 +908,23 @@ class SectorEightSettings:
                                              color=self.TEXT_COLOR
             
                                             )
+        # User profile dimensions: 200 × 200
+        try:
+            self.user_picture = pyglet.sprite.Sprite(
+                pyglet.resource.image(f"images/{self.obfuscator_obj.obfuscate_filename(self.active_user)}.tif"),
+                x=10, y=self.ruler.y - 10 - 200, batch=self.interface
+            )
+            self.user_picture.scale = 2
+        except pyglet.resource.ResourceNotFoundException:
+            self.user_picture = pyglet.sprite.Sprite(
+                pyglet.resource.image(f"images/{self.obfuscator_obj.obfuscate_filename(self.active_user)}.tif"),
+                x=10, y=self.ruler.y - 10 - 200, batch=self.interface
+            )
+            self.user_picture.scale = 2
+        self.user_label = pyglet.text.Label(
+            self.active_user.center(18), x=10, y=self.user_picture.y - 40, font_size=20,
+            font_name="Open Sans", batch=self.interface
+        )
         self.about_button = utilities.Button("\u2139 About", 10, 30, vruler_x - 10 - 10,
                                              40, self.interface, (0, 229, 255))
         self.performance_btn = utilities.Button("\u26a1 Performance", self.about_button.x,
