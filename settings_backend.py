@@ -179,6 +179,7 @@ class SectorEightSettings:
         self.avatar_rgb = self.data_storage.get("tint", (200, 200, 200))
         self.avatar_tint_label = None
         self.account_avatar_icon = None
+        self.main_tint = None
     def is_dark_background(self):
         r, g, b = self.background[:3]
         # Calculate standard perceived relative luminance
@@ -755,6 +756,8 @@ class SectorEightSettings:
         self.appearance_list.append(self.avatar_tint_label)
         self.current_panel = "appearance"
         #self.force_refresh_theme()
+        self.max_scroll = -20
+        self.offset_y = 0
     def change_theme(self, theme):
         # 1. Update active background and persist to user storage
         self.background = self.theme_backgrounds[theme]
@@ -801,6 +804,7 @@ class SectorEightSettings:
         self.avatar_rgb = target_rgb
         if self.avatar_preview:
             self.avatar_preview.color = target_rgb
+        self.main_tint.color = target_rgb
 
         # Sync persistent data
         self.data_storage['tint'] = self.avatar_rgb
@@ -921,6 +925,10 @@ class SectorEightSettings:
                 x=10, y=self.ruler.y - 10 - 200, batch=self.interface
             )
             self.user_picture.scale = 2
+        self.main_tint = pyglet.shapes.Rectangle(
+            x=self.user_picture.x, y=self.user_picture.y, 
+            width=200, height=200, color=self.avatar_rgb, batch=self.interface
+        )
         self.user_label = pyglet.text.Label(
             self.active_user.center(18), x=10, y=self.user_picture.y - 40, font_size=20,
             font_name="Open Sans", batch=self.interface

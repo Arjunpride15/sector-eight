@@ -118,12 +118,15 @@ def on_key_press(symbol, modifiers):
 @window.event
 def on_close():
     shop_instance.stop_music()
-    # Safely close the shelf to save data
-    if hasattr(shop_instance, 'data_storage'):
+    try:
         shop_instance.data_storage.close()
-    if hasattr(shop_instance, "log_file"):
+    except AttributeError:
+        pass
+
+    try:
         shop_instance.log_file.close()
-    
-    # Close the window
+    except AttributeError:
+        pass
+
     window.close()
 shop_instance.start()

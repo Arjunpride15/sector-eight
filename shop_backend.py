@@ -43,7 +43,7 @@ class SectorEightShop:
         self.laser_powers = self.data_storage.get('laser', 5)
         self.xp_speedups = self.data_storage.get('xp', 3)
         self.powerups = self.data_storage.get('powerups', 10)
-        self.invisible_powers = self.data_storage.get('invisiblity', 7)
+        self.invisible_powers = self.data_storage.get('invisibility', 7)
         self.extra_lives = self.data_storage.get('extra_lives', 0)
         self.log = self.log_file.get("log", list())
         self.log_str = ''
@@ -299,9 +299,7 @@ class SectorEightShop:
     def show_history_badge(self):
         try:
             self.update_history()
-            product_datetime = f"Bought on: \
-                                    {self.datetime_history[self.view_index]['time']} \
-                                    {self.datetime_history[self.view_index]['date']}"
+            product_datetime = f"Bought on: \n{self.datetime_history[self.view_index]['time']} , {self.datetime_history[self.view_index]['date']}"
             transaction_str = f"Transaction ID: {self.general_history[self.view_index][2]}"
             product_bought = self.general_history[self.view_index][1]
             price = f"Cost: {self.general_history[self.view_index][3]}"
@@ -488,11 +486,11 @@ class SectorEightShop:
             if hasattr(obj, 'update'):
                 obj.update(dt)
         self.id_label.text = f"Latest Transaction ID: {self.transaction_id}"
-        self.product_names = {"Laser Boost": 'laser', 
-                              "XP Speedups": 'xp', 
-                              "Powerups": 'powerups', 
-                              "Invisibility": 'invisibility', 
-                              "Extra Life": 'extra_lives',
+        self.product_names = {"Laser Boost": self.laser_powers, 
+                              "XP Speedups": self.xp_speedups, 
+                              "Powerups": self.powerups, 
+                              "Invisibility": self.invisible_powers, 
+                              "Extra Life": self.extra_lives,
                               }
         self.theme_backgrounds['Neon Mania'] = (random.random(), random.random(), random.random(), 1.0)
     

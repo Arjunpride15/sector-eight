@@ -330,7 +330,7 @@ class SectorEightHome:
         self.pellet_label = pyglet.text.Label(f'\N{COIN}: {self.pellets}', 
                                               font_name="Open Sans", 
                                               font_size=20,
-                                              x=83 + self.welcome_label.x + 300, 
+                                              x = self.welcome_label.x + self.welcome_label.content_width + 40,
                                               y=740, 
                                               batch=self.header_interface, 
                                               color=(253, 189, 1, 255))
@@ -342,7 +342,7 @@ class SectorEightHome:
         self.ruler = pyglet.shapes.Line(x=0, y=ruler_y, x2=self.window.width, y2=ruler_y,
                                         thickness=1.6, color=(255, 255, 255, 255), batch=self.header_interface)
         
-        self.side_panel_btn = utilities.Button("\u2630", 10, self.ruler.y + 20, 50, 50, self.header_interface,
+        self.side_panel_btn = utilities.Button("≡", 10, self.ruler.y + 20, 50, 50, self.header_interface,
                                                utilities.convertGLtoRGBA(*self.background), font_name="Open Sans", font_size=35)
         self.mask_rect = pyglet.shapes.Rectangle(
             x=0, y=ruler_y, width=self.window.width, height=self.window.width - ruler_y,
