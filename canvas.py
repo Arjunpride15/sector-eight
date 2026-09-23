@@ -713,7 +713,7 @@ class SectorEight:
             )
 
             # 2. Shy Reaction: If player is within 250 pixels, run away
-            if player_dist < 250:
+            if player_dist < 300:
                 # Trigger invisibility to 'hide' while fleeing
                 if not self.ghost_invisibility and self.ghost_invisible_powers >= 1:
                     self.ghost_invisible_power()
@@ -838,7 +838,7 @@ class SectorEight:
     def open_shop(self):
         Popen(["unilaunch.cmd", "-gs"])
     def open_query(self):
-        raise NotImplementedWarning('Query Button Clicked')
+        webbrowser.open("https://github.com/Arjunpride15/sector-eight/wiki/FAQs")
     
     def force_rendering(self, dt):
         

@@ -12,6 +12,10 @@ screen = window.display.get_default_screen()
 x_pos = (screen.width - window.width) // 2
 y_pos = (screen.height - window.height) // 2
 window.set_location(x_pos, y_pos)
+icon_image = pyglet.image.load('images/sector_eight.ico')
+
+# Set the window icon
+window.set_icon(icon_image)
 shop_instance = shop_backend.SectorEightShop(window)
 
 if shop_instance.configObj.toml_dict["performance"]["VSync"]:

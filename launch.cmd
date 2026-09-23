@@ -1,5 +1,6 @@
 @echo off
 REM Check if the -reset flag was passed as the first argument
+taskkill /IM python.exe >nul 2>&1
 if "%1"=="-reset" (
     del game_data* /q 2>nul
     echo [DEV] Data reset: Binary shelf files deleted.

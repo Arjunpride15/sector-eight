@@ -9,9 +9,10 @@ screen = window.display.get_default_screen()
 x_pos = (screen.width - window.width) // 2
 y_pos = (screen.height - window.height) // 2
 window.set_location(x_pos, y_pos)
-#icon_16 = pyglet.image.load('images/icon-16.png')
-#icon_32 = pyglet.image.load('images/icon-32.png')
-#window.set_icon(icon_16, icon_32)
+icon_image = pyglet.image.load('images/sector_eight.ico')
+
+# Set the window icon
+window.set_icon(icon_image)
 auth_obj = auth_backend.SectorEightAuthManager(window)
 if auth_obj.configObj.toml_dict["performance"]["VSync"]:
     window.set_vsync(True)

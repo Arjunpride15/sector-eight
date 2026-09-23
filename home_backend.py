@@ -232,7 +232,7 @@ class SectorEightHome:
     def game(self):
         Popen(["unilaunch.cmd", "-hg"])
     def query(self):
-        ...
+        webbrowser.open("https://github.com/Arjunpride15/sector-eight/wiki/FAQs")
     def logout(self):
         self.session_obj.clear_session()
         Popen(["auth_launch.cmd"])

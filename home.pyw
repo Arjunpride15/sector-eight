@@ -1,3 +1,14 @@
+import sys
+import ctypes
+
+# MUST execute before importing pyglet or creating UI windows
+if sys.platform == "win32":
+    try:
+        APP_ID = "SectorEight.Game.App.1.0"
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
+    except Exception as e:
+        print(f"Failed to set AUMID: {e}")
+        
 import pyglet, shelve, webbrowser
 from pyglet.window import key, mouse
 import home_backend
@@ -11,6 +22,10 @@ screen = window.display.get_default_screen()
 x_pos = (screen.width - window.width) // 2
 y_pos = (screen.height - window.height) // 2
 window.set_location(x_pos, y_pos)
+icon_image = pyglet.image.load('images/sector_eight.ico')
+
+# Set the window icon
+window.set_icon(icon_image)
 home_obj = home_backend.SectorEightHome(window)
 if home_obj.configObj.toml_dict["performance"]["VSync"]:
     window.set_vsync(True)

@@ -26,7 +26,10 @@ screen = window.display.get_default_screen()
 x_pos = (screen.width - window.width) // 2
 y_pos = (screen.height - window.height) // 2
 window.set_location(x_pos, y_pos)
+icon_image = pyglet.image.load('images/sector_eight.ico')
 
+# Set the window icon
+window.set_icon(icon_image)
 se = canvas.SectorEight(window)
 if se.confObj.toml_dict["performance"]["VSync"]:
     window.set_vsync(True)

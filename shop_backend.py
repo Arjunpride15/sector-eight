@@ -13,6 +13,7 @@ import datetime, time
 from recommendations import SectorEightRecommendations, SectorEightHistory
 from session_manager import SessionManager
 import sys, obfuscator
+import webbrowser
 
 class ShopItem(NamedTuple):
     item_name: str
@@ -214,7 +215,6 @@ class SectorEightShop:
         self.log_file.sync()        
     def buy(self, item, discount=0):
         if not item in self.product_names.keys():
-            raise tastyerrors.ProcessingError(f"Invalid product passed to buy ({item})")
             return
         for index, prod in enumerate(self.available_items):
             if item == prod.item_name:
@@ -229,7 +229,7 @@ class SectorEightShop:
             self.play(music_file=self.configObj.toml_dict['music']['shopBuySuccess'])
         else:
             self.play(music_file=self.configObj.toml_dict['music']['shopBuyError'])
-            raise tastyerrors.InsufficientFundsError(f"Sufficient pellets aren't available to buy {item}")
+            return
         if item == "Laser Boost":
             self.laser_powers += 1
             self.sync_data("laser", self.laser_powers)
@@ -294,7 +294,7 @@ class SectorEightShop:
         Popen(["unilaunch.cmd", "-sg"])
     
     def query(self):
-        raise NotImplementedWarning('Query button clicked')
+        webbrowser.open("https://github.com/Arjunpride15/sector-eight/wiki/FAQs")
     
     def show_history_badge(self):
         try:
