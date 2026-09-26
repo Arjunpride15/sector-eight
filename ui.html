@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      font-family: 'Cascadia Code', 'Courier New', Courier, monospace;
+    }
+
+    body {
+      background-color: #000000;
+      color: #00a8f0;
+      width: 400px;
+      height: 400px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 30px;
+    }
+
+    .page {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+    }
+
+    .page.active {
+      display: flex;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #00a8f0;
+      line-height: 1.3;
+      margin-bottom: 20px;
+    }
+
+    .h1-small {
+      font-size: 16px;
+      margin-bottom: 15px;
+      align-self: flex-start;
+    }
+
+    p {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #00a8f0;
+      margin-bottom: 12px;
+    }
+
+    .wiki-link {
+      color: #00a8f0;
+      text-decoration: underline;
+      word-break: break-all;
+      cursor: pointer;
+    }
+
+    .progress-container {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      margin: 10px 0;
+    }
+
+    svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    circle {
+      fill: none;
+      stroke-width: 16;
+    }
+
+    .circle-bg {
+      stroke: #000000;
+    }
+
+    .circle-progress {
+      stroke: #00a8f0;
+      stroke-dasharray: 565.48;
+      stroke-dashoffset: 565.48;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.4s ease;
+    }
+
+    .progress-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 32px;
+      font-weight: bold;
+      color: #00a8f0;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 15px;
+      width: 100%;
+      justify-content: center;
+      margin-top: auto;
+    }
+
+    .btn {
+      background-color: #00a8f0;
+      color: #ffffff;
+      border: none;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: bold;
+      border-radius: 12px;
+      cursor: pointer;
+      min-width: 90px;
+      outline: none;
+    }
+
+    .btn:disabled {
+      background-color: #005b82;
+      color: #7098a8;
+      cursor: not-allowed;
+    }
+
+    .emoji {
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- STEP 1: WELCOME -->
+  <div id="step-welcome" class="page active">
+    <h1>Welcome to the<br>Sector Eight<br>Installer!</h1>
+    <div class="button-group">
+      <button class="btn" onclick="nsLUI.Call('OnCancel')">Cancel</button>
+      <button class="btn" onclick="nsLUI.Call('OnNext')">Next</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: PROGRESS -->
+  <div id="step-progress" class="page">
+    <h1 class="h1-small">Sector Eight Installer</h1>
+    <div class="progress-container">
+      <svg viewBox="0 0 200 200">
+        <circle class="circle-bg" cx="100" cy="100" r="90" />
+        <circle id="progress-bar" class="circle-progress" cx="100" cy="100" r="90" />
+      </svg>
+      <div id="progress-text" class="progress-text">0%</div>
+    </div>
+    <div class="button-group">
+      <button id="btn-cancel-prog" class="btn" onclick="nsLUI.Call('OnCancel')">Cancel</button>
+      <button id="btn-next-prog" class="btn" disabled onclick="nsLUI.Call('OnNext')">Next</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: COMPLETE -->
+  <div id="step-complete" class="page">
+    <h1 style="align-self: flex-start;">Installation<br>Complete!</h1>
+    <p style="text-align: left; margin-top: 10px;">
+      Thanks for installing Sector Eight!<br>
+      Don't forget to read the documentation at:<br>
+      <span class="wiki-link" onclick="nsLUI.Call('OpenWiki')">www.github.com/Arjunpride15/sector-eight/wiki</span>
+    </p>
+    <p style="text-align: left; margin-top: 15px;">
+      This project is completely open source <span class="emoji">😊</span>
+    </p>
+    <div class="button-group">
+      <button class="btn" onclick="nsLUI.Call('OnFinish')">Okay!</button>
+    </div>
+  </div>
+
+  <script>
+    const circumference = 2 * Math.PI * 90; // r = 90
+
+    function setProgress(percent) {
+      const offset = circumference - (percent / 100) * circumference;
+      document.getElementById('progress-bar').style.strokeDashoffset = offset;
+      document.getElementById('progress-text').innerText = percent + '%';
+      
+      if (percent >= 100) {
+        document.getElementById('btn-cancel-prog').disabled = true;
+        document.getElementById('btn-next-prog').disabled = false;
+      }
+    }
+
+    function showStep(stepId) {
+      document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+      document.getElementById(stepId).classList.add('active');
+    }
+  </script>
+</body>
+</html>
